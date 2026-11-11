@@ -20,18 +20,18 @@ jobs:
     name: Run Pull Request Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: corretto
           java-version: 25
           cache: maven
 
       - name: Run tests
-        run: mvn -B clean verify
+        run: mvn -B -e clean verify
       
       - name: Test Docker image build
         run: docker build --no-cache --tag trade-imports-fish-be .
