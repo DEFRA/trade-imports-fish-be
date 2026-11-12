@@ -90,7 +90,7 @@ mvn spring-boot:run
 
 ### SonarCloud
 
-Example SonarCloud configuration are available in the GitHub Action workflows.
+Example SonarCloud configuration is available in the [check-pull-request.](.github/workflows/check-pull-request.yml)
 
 ### Dependabot
 
