@@ -4,14 +4,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: $${{ github.head_ref || github.ref_name }}
+  group: ${{ github.head_ref || github.ref_name }}
   cancel-in-progress: false
   queue: max
-
-permissions:
-  id-token: write
-  contents: write
-  pull-requests: write
 
 env:
   AWS_REGION: eu-west-2
@@ -21,12 +16,24 @@ jobs:
   build:
     name: CDP-build-hotfix-workflow
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0 # Depth 0 required for branch-based versioning
       - name: Publish Hot Fix
         uses: DEFRA/cdp-build-action/build-hotfix@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+  sonarcloud-scan:
+    name: SonarCloud Scan
+    uses: ./.github/workflows/sonarcloud.yml
+    needs: build
+    permissions:
+      contents: read
+      pull-requests: write
+    secrets: inherit

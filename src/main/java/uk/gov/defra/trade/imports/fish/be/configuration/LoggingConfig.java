@@ -1,11 +1,9 @@
 package uk.gov.defra.trade.imports.fish.be.configuration;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Configuration;
 
 import jakarta.annotation.PostConstruct;
-import java.util.Optional;
 
 /**
  * Configuration for structured logging with ECS (Elastic Common Schema) format.
