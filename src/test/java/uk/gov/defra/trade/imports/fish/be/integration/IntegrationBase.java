@@ -42,8 +42,8 @@ abstract class IntegrationBase {
       parse("mockserver/mockserver").withTag(
           "mockserver-" + MockServerClient.class.getPackage().getImplementationVersion()));
 
-  static MongoDBContainer MONGO_CONTAINER = new MongoDBContainer(
-      DockerImageName.parse("mongo:7.0")).withExposedPorts(27017);
+  static final MongoDBContainer MONGO_CONTAINER = new MongoDBContainer(
+      DockerImageName.parse("mongo:7.0"));
 
   static {
     Startables.deepStart(
@@ -82,7 +82,10 @@ abstract class IntegrationBase {
 
   @AfterEach
   void tearDown() {
-    usingStub().reset();
+    if (mockServerClient != null) {
+      // close() stops the shared MockServer, so only reset it between tests.
+      mockServerClient = mockServerClient.reset();
+    }
   }
 
 }

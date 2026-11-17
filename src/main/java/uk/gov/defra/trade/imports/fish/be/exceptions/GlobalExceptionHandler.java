@@ -4,10 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -28,6 +31,24 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
   private static final String MDC_TRACE_ID = "trace.id";
+
+  @ExceptionHandler({
+      HttpMessageNotReadableException.class,
+      MissingRequestHeaderException.class,
+      MethodArgumentTypeMismatchException.class
+  })
+  public ProblemDetail handleInvalidRequest(Exception ex) {
+    String traceId = MDC.get(MDC_TRACE_ID);
+    log.warn("Invalid request (trace: {}): {}", traceId, ex.getClass().getSimpleName());
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+        "Check the request body, identifiers and required headers");
+    problemDetail.setType(URI.create("https://api.cdp.defra.cloud/problems/validation-error"));
+    problemDetail.setTitle("Validation Error");
+    if (traceId != null) {
+      problemDetail.setProperty("traceId", traceId);
+    }
+    return problemDetail;
+  }
 
   /**
    * Handle validation errors (400 Bad Request).
