@@ -1,0 +1,470 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fis-notification-aggregate.schema.json",
+  "title": "Fish import notification",
+  "description": "A notification of fish or fish products to be imported into Great Britain. This schema describes the stored notification in any state, from a draft saved during the journey to a submitted notification. Only identity and state are required, so that an incomplete draft is valid. The stricter rules that apply at submission are in fis-notification-submitted.schema.json. Dates and times follow ISO 8601. Countries use ISO 3166-1 alpha-2 codes.",
+  "type": "object",
+  "required": ["referenceNumber", "organisationId", "status", "created", "updated", "notification"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Internal database identifier of the notification record."
+    },
+    "referenceNumber": {
+      "type": "string",
+      "pattern": "^[A-Z0-9][A-Z0-9-]{6,30}$",
+      "description": "Unique reference of the notification. It is allocated when the draft is first saved and does not change.",
+      "examples": ["IUU-2026-676450"]
+    },
+    "organisationId": {
+      "type": "string",
+      "description": "Identifier of the organisation that owns the notification. When an agent creates the notification, this is the agent's organisation."
+    },
+    "importerOrganisationId": {
+      "type": "string",
+      "description": "Identifier of the importer's organisation. Set when an agent creates the notification on behalf of an importer."
+    },
+    "createdBy": {
+      "type": "object",
+      "description": "The user who created the notification, and the role they acted in.",
+      "additionalProperties": false,
+      "required": ["userId", "actingAs"],
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Identifier of the user who created the notification."
+        },
+        "actingAs": {
+          "type": "string",
+          "enum": ["IMPORTER", "AGENT"],
+          "description": "Role of the user when creating the notification. IMPORTER: the user acts for their own organisation as the importer. AGENT: the user acts on behalf of an importer."
+        }
+      }
+    },
+    "concurrencyToken": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Version counter used to prevent one update overwriting another. It starts at 0 and increases by 1 on every successful change."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["DRAFT", "SUBMITTED", "DELETED"],
+      "description": "State of the notification. DRAFT: being completed by the importer or agent and not yet visible to the port health authority. SUBMITTED: formally submitted for review. DELETED: removed by the user and no longer active."
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time the notification was first saved, in UTC.",
+      "examples": ["2026-11-10T09:15:00Z"]
+    },
+    "updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time the notification was last changed, in UTC.",
+      "examples": ["2026-11-12T14:30:00Z"]
+    },
+    "submittedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time the notification was submitted, in UTC. Present only once submitted.",
+      "examples": ["2026-11-12T14:30:00Z"]
+    },
+    "receivedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time the service received the submission, in UTC. Normally the same as submittedAt.",
+      "examples": ["2026-11-12T14:30:01Z"]
+    },
+    "notification": {
+      "$ref": "#/$defs/Notification"
+    },
+    "fieldProvenance": {
+      "type": "array",
+      "description": "Records where a value came from when it was read from a document, calculated, or changed after it was first captured. Values typed in by the user have no entry.",
+      "items": { "$ref": "#/$defs/FieldProvenance" }
+    }
+  },
+  "$defs": {
+    "Notification": {
+      "type": "object",
+      "description": "The content of the notification: how the consignment travels, when and where it arrives, what it contains, who is involved and which documents support it.",
+      "additionalProperties": false,
+      "properties": {
+        "transport": { "$ref": "#/$defs/Transport" },
+        "arrival": { "$ref": "#/$defs/Arrival" },
+        "landingType": {
+          "type": "string",
+          "enum": ["CONTAINERISED", "DIRECT_LANDING", "OTHER"],
+          "description": "How the fish arrive. CONTAINERISED: delivered in containers. DIRECT_LANDING: landed directly from the fishing vessel. OTHER: any other arrangement."
+        },
+        "countryOfExport": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "description": "Country the consignment is exported from, as an ISO 3166-1 alpha-2 code.",
+          "examples": ["IS"]
+        },
+        "exportRegion": {
+          "type": "string",
+          "enum": ["EU", "REST_OF_WORLD"],
+          "description": "Whether the country of export is in the European Union. EU: a member state of the EU-27. REST_OF_WORLD: any other country. It is calculated from countryOfExport and determines whether a CHED reference is needed."
+        },
+        "ched": { "$ref": "#/$defs/Ched" },
+        "commodities": {
+          "type": "array",
+          "description": "The goods in the consignment, one entry per commodity code.",
+          "items": { "$ref": "#/$defs/Commodity" }
+        },
+        "importer": {
+          "$ref": "#/$defs/Party",
+          "description": "The importer of the consignment."
+        },
+        "agent": {
+          "$ref": "#/$defs/Party",
+          "description": "The agent acting for the importer, where one is used."
+        },
+        "responsibleParty": {
+          "type": "string",
+          "enum": ["IMPORTER", "AGENT"],
+          "description": "Who is responsible for the notification. IMPORTER: the importer. AGENT: the agent acting for the importer."
+        },
+        "exporter": {
+          "$ref": "#/$defs/Party",
+          "description": "The exporter of the consignment."
+        },
+        "documents": {
+          "type": "array",
+          "description": "Documents that support the notification. Each entry refers to a stored file. The file itself is not held here.",
+          "items": { "$ref": "#/$defs/DocumentRef" }
+        },
+        "declaration": { "$ref": "#/$defs/Declaration" }
+      }
+    },
+    "Transport": {
+      "type": "object",
+      "description": "How the consignment travels to Great Britain. Only the mode is entered by the user. The other details are normally read from the supporting documents.",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["VESSEL", "AIR_FREIGHT", "ROAD_VEHICLE"],
+          "description": "Means of transport on arrival. VESSEL: ship or other vessel. AIR_FREIGHT: aircraft. ROAD_VEHICLE: lorry or other road vehicle."
+        },
+        "vesselName": {
+          "type": "string",
+          "description": "Name of the vessel carrying the consignment.",
+          "examples": ["NORDIC STAR"]
+        },
+        "imoNumber": {
+          "type": "string",
+          "description": "International Maritime Organization number of the vessel.",
+          "examples": ["9876543"]
+        },
+        "flightNumber": {
+          "type": "string",
+          "description": "Flight number, for air freight."
+        },
+        "vehicleRegistration": {
+          "type": "string",
+          "description": "Registration number of the vehicle, for road transport."
+        },
+        "containerNumbers": {
+          "type": "array",
+          "description": "Identification numbers of the containers carrying the consignment.",
+          "items": { "type": "string" },
+          "examples": [["MSCU1102101", "MSCU1102102"]]
+        },
+        "transportDocumentReference": {
+          "type": "string",
+          "description": "Reference of the transport document, such as a bill of lading or air waybill.",
+          "examples": ["BL-ISL-2026-0318"]
+        }
+      }
+    },
+    "Arrival": {
+      "type": "object",
+      "description": "When and where the consignment is expected to arrive in Great Britain.",
+      "additionalProperties": false,
+      "properties": {
+        "portOfEntry": {
+          "type": "string",
+          "description": "Code of the port or airport where the consignment arrives, from the reference data list of ports.",
+          "examples": ["FELIXSTOWE"]
+        },
+        "borderControlPost": {
+          "type": "string",
+          "description": "Code of the border control post that serves the port of entry, where border control rules apply.",
+          "examples": ["FELIXSTOWE-BCP"]
+        },
+        "expectedArrivalDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Expected date of arrival, as YYYY-MM-DD. It must be a real date that is not in the past when entered.",
+          "examples": ["2026-11-30"]
+        },
+        "expectedArrivalTime": {
+          "type": "string",
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+          "description": "Expected time of arrival on the 24-hour clock, as HH:mm.",
+          "examples": ["06:00"]
+        },
+        "expectedArrivalAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Expected arrival as a single date and time in UTC. It is calculated from the expected date and time and is used for sorting.",
+          "examples": ["2026-11-30T06:00:00Z"]
+        }
+      }
+    },
+    "Ched": {
+      "type": "object",
+      "description": "Common Health Entry Document (CHED) details. Required for consignments from outside the EU. Not used for consignments from the EU.",
+      "additionalProperties": false,
+      "properties": {
+        "reference": {
+          "type": "string",
+          "pattern": "^CHEDP\\.GB\\.\\d{4}\\.\\d{7}$",
+          "description": "CHED-P reference, in the form CHEDP.GB.YYYY.NNNNNNN.",
+          "examples": ["CHEDP.GB.2026.1234567"]
+        }
+      }
+    },
+    "Commodity": {
+      "type": "object",
+      "description": "A commodity in the consignment, identified by its commodity code, with the species it contains.",
+      "additionalProperties": false,
+      "properties": {
+        "commodityCode": {
+          "type": "string",
+          "description": "Commodity code (CN code) of the goods.",
+          "examples": ["03024400"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the goods.",
+          "examples": ["Mackerel, fresh or chilled"]
+        },
+        "species": {
+          "type": "array",
+          "description": "The species in this commodity. Only species that belong to the commodity code can be entered.",
+          "items": { "$ref": "#/$defs/Species" }
+        },
+        "totalNetWeightKg": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total net weight of the commodity in kilograms. It is the sum of the net weights of its species.",
+          "examples": [2000]
+        },
+        "totalNetFisheryProductWeightKg": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total net fishery product weight of the commodity in kilograms. It is the sum of the species values where they are given.",
+          "examples": [1900]
+        }
+      }
+    },
+    "Species": {
+      "type": "object",
+      "description": "A species of fish within a commodity, with its declared weight.",
+      "additionalProperties": false,
+      "properties": {
+        "speciesCode": {
+          "type": "string",
+          "description": "Code of the species from the reference data list.",
+          "examples": ["MAC"]
+        },
+        "commonName": {
+          "type": "string",
+          "description": "Common name of the species.",
+          "examples": ["Atlantic mackerel"]
+        },
+        "scientificName": {
+          "type": "string",
+          "description": "Scientific name of the species.",
+          "examples": ["Scomber scombrus"]
+        },
+        "netWeightKg": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Net weight of the species in kilograms, as declared by the importer.",
+          "examples": [1200]
+        },
+        "netFisheryProductWeightKg": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Net fishery product weight of the species in kilograms, as declared by the importer.",
+          "examples": [1150]
+        }
+      }
+    },
+    "Party": {
+      "type": "object",
+      "description": "A person or organisation involved in the import. It is a copy of the details at the time they were captured, so later changes to a profile do not alter a submitted notification.",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the company or organisation.",
+          "examples": ["New England Seafood International Ltd"]
+        },
+        "contactName": {
+          "type": "string",
+          "description": "Name of a contact person.",
+          "examples": ["Jamie Example"]
+        },
+        "eori": {
+          "type": "string",
+          "description": "Economic Operators Registration and Identification (EORI) number.",
+          "examples": ["GB222333444000"]
+        },
+        "email": {
+          "type": "string",
+          "description": "Contact email address.",
+          "examples": ["imports@example.com"]
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact telephone number.",
+          "examples": ["+44 1472 000000"]
+        },
+        "address": { "$ref": "#/$defs/Address" }
+      }
+    },
+    "Address": {
+      "type": "object",
+      "description": "A postal address.",
+      "additionalProperties": false,
+      "properties": {
+        "addressLine1": { "type": "string", "description": "First line of the address." },
+        "addressLine2": { "type": "string", "description": "Second line of the address." },
+        "townOrCity": { "type": "string", "description": "Town or city." },
+        "county": { "type": "string", "description": "County." },
+        "postcode": { "type": "string", "description": "Postcode." },
+        "countryCode": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "description": "Country, as an ISO 3166-1 alpha-2 code.",
+          "examples": ["GB"]
+        }
+      }
+    },
+    "DocumentRef": {
+      "type": "object",
+      "description": "A reference to a document that supports the notification.",
+      "additionalProperties": false,
+      "required": ["documentId", "documentType"],
+      "properties": {
+        "documentId": {
+          "type": "string",
+          "description": "Identifier of the stored document.",
+          "examples": ["CC-IS-2026-11021-01"]
+        },
+        "documentType": {
+          "type": "string",
+          "enum": [
+            "CATCH_CERTIFICATE",
+            "SIMPLIFIED_CATCH_CERTIFICATE",
+            "REEXPORT_CATCH_CERTIFICATE",
+            "PROCESSING_STATEMENT",
+            "NON_MANIPULATION_DECLARATION",
+            "ADDITIONAL"
+          ],
+          "description": "Kind of document. CATCH_CERTIFICATE: catch certificate. SIMPLIFIED_CATCH_CERTIFICATE: simplified catch certificate. REEXPORT_CATCH_CERTIFICATE: re-export catch certificate. PROCESSING_STATEMENT: processing statement. NON_MANIPULATION_DECLARATION: non-manipulation declaration. ADDITIONAL: any other supporting document."
+        },
+        "documentReference": {
+          "type": "string",
+          "description": "Reference number printed on the document.",
+          "examples": ["ISL 2026 CC 004417"]
+        },
+        "reviewStatus": {
+          "type": "string",
+          "enum": ["NOT_STARTED", "NEEDS_REVIEW", "COMPLETE"],
+          "description": "Progress of the importer's check of the details read from the document. NOT_STARTED: not yet checked. NEEDS_REVIEW: some details were unclear or missing and must be checked. COMPLETE: checked and confirmed."
+        }
+      }
+    },
+    "Declaration": {
+      "type": "object",
+      "description": "The importer's declaration made when submitting the notification.",
+      "additionalProperties": false,
+      "properties": {
+        "optionVersion": {
+          "type": "string",
+          "description": "Identifier of the declaration wording shown to the user."
+        },
+        "statements": {
+          "type": "array",
+          "description": "The statements the user was asked to accept.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "accepted"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Identifier of the statement.",
+                "examples": ["ALL_REQUIRED_DOCUMENTS_UPLOADED"]
+              },
+              "accepted": {
+                "type": "boolean",
+                "description": "Whether the user accepted the statement."
+              }
+            }
+          }
+        },
+        "acceptedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date and time the declaration was accepted, in UTC.",
+          "examples": ["2026-11-12T14:29:40Z"]
+        },
+        "acceptedByUserId": {
+          "type": "string",
+          "description": "Identifier of the user who accepted the declaration."
+        }
+      }
+    },
+    "FieldProvenance": {
+      "type": "object",
+      "description": "Where a value came from and, if it was changed, what it was before.",
+      "additionalProperties": false,
+      "required": ["path", "source"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Location of the value within the notification content.",
+          "examples": ["transport.vesselName"]
+        },
+        "source": {
+          "type": "string",
+          "enum": ["MANUAL", "EXTRACTED", "CORRECTED", "AUTHORITY_ENTERED", "DERIVED"],
+          "description": "How the value was set. MANUAL: entered by the user. EXTRACTED: read automatically from a document. CORRECTED: read from a document and then changed by the user. AUTHORITY_ENTERED: entered by an authority user. DERIVED: calculated by the service."
+        },
+        "documentId": {
+          "type": "string",
+          "description": "Identifier of the document the value was read from."
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence of the automatic reading, from 0 (none) to 1 (certain).",
+          "examples": [0.96]
+        },
+        "originalValue": {
+          "type": ["string", "number", "null"],
+          "description": "The value as first read from the document. Kept when the value is corrected."
+        },
+        "changedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date and time the value was last set or changed, in UTC."
+        },
+        "changedByUserId": {
+          "type": "string",
+          "description": "Identifier of the user who last set or changed the value."
+        }
+      }
+    }
+  }
+}

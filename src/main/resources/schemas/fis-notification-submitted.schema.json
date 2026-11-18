@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fis-notification-submitted.schema.json",
+  "title": "Fish import notification, submitted",
+  "description": "The rules a fish import notification must meet to be submitted. It applies everything in fis-notification-aggregate.schema.json and also requires the details needed for review: the means of transport, the arrival port, date and time, the country of export, and at least one commodity with at least one species and its net weight. A CHED reference is required for exports from outside the EU and must not be given for exports from the EU. When an agent submits, the agent's details and the responsible party are also required.",
+  "allOf": [
+    { "$ref": "fis-notification-aggregate.schema.json" },
+    {
+      "type": "object",
+      "required": ["submittedAt", "notification"],
+      "properties": {
+        "status": {
+          "const": "SUBMITTED",
+          "description": "A submitted notification has the status SUBMITTED."
+        },
+        "notification": {
+          "type": "object",
+          "required": ["transport", "arrival", "countryOfExport", "exportRegion", "commodities"],
+          "properties": {
+            "transport": { "required": ["mode"] },
+            "arrival": {
+              "required": ["portOfEntry", "expectedArrivalDate", "expectedArrivalTime", "expectedArrivalAt"]
+            },
+            "commodities": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "required": ["commodityCode", "species"],
+                "properties": {
+                  "species": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": { "required": ["speciesCode", "netWeightKg"] }
+                  }
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "description": "A consignment from outside the EU needs a CHED reference.",
+              "if": {
+                "properties": { "exportRegion": { "const": "REST_OF_WORLD" } },
+                "required": ["exportRegion"]
+              },
+              "then": {
+                "required": ["ched"],
+                "properties": { "ched": { "required": ["reference"] } }
+              }
+            },
+            {
+              "description": "A consignment from the EU does not have a CHED reference.",
+              "if": {
+                "properties": { "exportRegion": { "const": "EU" } },
+                "required": ["exportRegion"]
+              },
+              "then": { "not": { "required": ["ched"] } }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "description": "When an agent submits, the agent's details and the responsible party are required.",
+      "if": {
+        "properties": {
+          "createdBy": {
+            "properties": { "actingAs": { "const": "AGENT" } },
+            "required": ["actingAs"]
+          }
+        },
+        "required": ["createdBy"]
+      },
+      "then": {
+        "properties": {
+          "notification": {
+            "required": ["agent", "responsibleParty"],
+            "properties": { "agent": { "required": ["name"] } }
+          }
+        }
+      }
+    }
+  ]
+}
