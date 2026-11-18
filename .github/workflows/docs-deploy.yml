@@ -1,9 +1,18 @@
 name: Deploy Docs
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+
+on:
   push:
     branches:
       - main
+    paths:
+      - 'docs/**'
 
 concurrency:
   group: pages
