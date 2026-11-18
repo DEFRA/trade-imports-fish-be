@@ -7,7 +7,7 @@
 - Navigation uses [mkdocs-awesome-pages-plugin][mkdocs-pages]
   and `.pages` files. Site settings are in [mkdocs.yml](mkdocs.yml).
 - See [README.md](README.md) for documentation setup and maintenance details.
-- For general documentation authoring standards, refer to the `create-update-mkdocs` skill.
+- For general documentation authoring standards, refer to the `create-update-backend-docs` skill.
 
 ## Directory Layout
 

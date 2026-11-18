@@ -1,5 +1,5 @@
 ---
-name: create-update-mkdocs
+name: create-update-backend-docs
 description: Create or update technical documentation in docs/wiki/ for the Trade Imports Fish Backend. Document features, services, workflows, configuration, and architecture. Compare documentation with implementation; code is the source of truth.
 ---
 
