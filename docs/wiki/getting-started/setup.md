@@ -65,6 +65,7 @@ docker --version
 
 ## Next Steps
 
+- [Configure Git Hooks](git-hooks.md) - Set up automatic documentation updates
 - [Running the Application](running.md)
 - [Testing](../contributing/quality/index.md)
 - [Configuration](../configuration/index.md)

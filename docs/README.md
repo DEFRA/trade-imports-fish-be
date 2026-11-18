@@ -131,6 +131,7 @@ export GITHUB_TOKEN=your_token_here
 #### Supported Environment Variables
 
 The pre-commit hook looks for tokens in this order:
+
 1. `COPILOT_GITHUB_TOKEN` — explicitly for Copilot CLI
 2. `GH_TOKEN` — GitHub CLI token
 3. `GITHUB_TOKEN` — standard GitHub token

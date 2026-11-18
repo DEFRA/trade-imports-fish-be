@@ -1,5 +1,6 @@
 nav:
   - Overview: index.md
   - Setup: setup.md
+  - Git Hooks: git-hooks.md
   - Running: running.md
   - Deployment: deployment.md

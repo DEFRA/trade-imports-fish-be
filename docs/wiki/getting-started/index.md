@@ -15,8 +15,9 @@ Before you start, ensure you have the following installed:
 ## Quick Setup
 
 1. [Development Setup](setup.md) - Set up your local development environment
-2. [Running the Application](running.md) - Learn how to run the application
-3. [Testing](../contributing/quality/index.md) - Run tests
+2. [Git Hooks Configuration](git-hooks.md) - Configure automatic documentation updates
+3. [Running the Application](running.md) - Learn how to run the application
+4. [Testing](../contributing/quality/index.md) - Run tests
 
 ## Next Steps
 
