@@ -91,9 +91,9 @@ curl -X GET http://localhost:8085/health \
 
 The trace ID is propagated through all logs and can be found in:
 
-- Request/Response headers
-- Application logs (ECS format)
-- CloudWatch metrics (if AWS EMF enabled)
+- Application logs (ECS format), when a nonblank trace header is supplied
+- Outbound request headers from the configured RestClient/RestTemplate
+- The `traceId` field in handled error responses, when present in MDC
 
 ## Interactive API Testing
 
