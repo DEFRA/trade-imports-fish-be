@@ -22,7 +22,7 @@
     <java.version>25</java.version>
     <maven.compiler.source>25</maven.compiler.source>
     <maven.compiler.target>25</maven.compiler.target>
-    <amazon.awssdk.version>2.40.2</amazon.awssdk.version>
+    <amazon.awssdk.version>2.59.1</amazon.awssdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     
     <!-- SonarCloud configuration -->
