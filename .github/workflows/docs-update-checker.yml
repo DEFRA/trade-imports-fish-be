@@ -30,7 +30,7 @@ jobs:
       - name: Check for documentation changes in docs/wiki
         run: |
           if [ -z "$(git diff --name-only origin/main...HEAD -- docs/wiki)" ]; then
-            echo "❌ Error: No changes found in docs/wiki directory."
+            echo "❌ Error: No changes found in docs/wiki directory." >&2
             echo ""
             echo "📝 Please update the documentation to reflect your changes in this PR."
             echo ""
