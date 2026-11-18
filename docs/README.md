@@ -6,15 +6,16 @@ Complete guide for setting up, developing, and deploying MkDocs documentation fo
 
 1. [Quick Start](#quick-start)
 2. [Prerequisites](#prerequisites)
-3. [Installation](#installation)
-4. [Running Development Server](#running-development-server)
-5. [Available Commands](#available-commands)
-6. [Project Structure](#project-structure)
-7. [Configuration](#configuration)
-8. [Development Workflow](#development-workflow)
-9. [Building & Deployment](#building--deployment)
-10. [Troubleshooting](#troubleshooting)
-11. [Features & Technology Stack](#features--technology-stack)
+3. [Git Hooks Setup](#git-hooks-setup)
+4. [Installation](#installation)
+5. [Running Development Server](#running-development-server)
+6. [Available Commands](#available-commands)
+7. [Project Structure](#project-structure)
+8. [Configuration](#configuration)
+9. [Development Workflow](#development-workflow)
+10. [Building & Deployment](#building--deployment)
+11. [Troubleshooting](#troubleshooting)
+12. [Features & Technology Stack](#features--technology-stack)
 
 ---
 
@@ -76,6 +77,72 @@ The pre-commit hook requires execute permissions:
 ```bash
 chmod +x .githooks/pre-commit
 ```
+
+### Step 3: Set Up GitHub Token
+
+The pre-commit hook uses the Copilot CLI to update documentation, which requires GitHub authentication. You need to set up a Personal Access Token.
+
+#### Create a Personal Access Token
+
+1. Go to [github.com/settings/tokens](https://github.com/settings/tokens)
+2. Click **Generate new token** and select **Tokens (classic)**
+3. Give it a descriptive name (e.g., `copilot-docs-update`)
+4. Set the expiration (we recommend 90 days for security)
+5. Select the following scopes:
+   - `repo` (full control of private repositories)
+   - `read:user` (read user profile data)
+6. Click **Generate token**
+7. **Copy the token immediately** — you won't be able to see it again
+
+#### Add the Token to Your Environment
+
+Choose one of these methods:
+
+**Option A: Shell Profile (Recommended for persistent setup)**
+
+Add the token to your shell's profile file (`~/.bashrc`, `~/.zshrc`, or `~/.bash_profile`):
+
+```bash
+export GITHUB_TOKEN=your_token_here
+```
+
+Then reload your shell:
+
+```bash
+source ~/.bashrc   # or ~/.zshrc for zsh
+```
+
+**Option B: Git Configuration (Repository-specific)**
+
+Store it in your git config:
+
+```bash
+git config --global credential.https://github.com.token your_token_here
+```
+
+**Option C: Environment Variable for One Session**
+
+Export it temporarily in your current terminal:
+
+```bash
+export GITHUB_TOKEN=your_token_here
+```
+
+#### Supported Environment Variables
+
+The pre-commit hook looks for tokens in this order:
+1. `COPILOT_GITHUB_TOKEN` — explicitly for Copilot CLI
+2. `GH_TOKEN` — GitHub CLI token
+3. `GITHUB_TOKEN` — standard GitHub token
+
+Use whichever you prefer; set only one to avoid confusion.
+
+#### Troubleshooting Token Issues
+
+- **"update-docs: set COPILOT_GITHUB_TOKEN, GH_TOKEN, or GITHUB_TOKEN..."**: One of the three token environment variables is not set. Follow the setup steps above.
+- **"update-docs: copilot CLI is required..."**: The Copilot CLI is not installed. Install it from [github.com/github/gh-copilot](https://github.com/github/gh-copilot).
+- **Token expired**: Regenerate a new token at [github.com/settings/tokens](https://github.com/settings/tokens) and update your environment.
+- **Authentication fails**: Ensure the token has the `repo` and `read:user` scopes, and that your GitHub account has access to this repository.
 
 ### What the Pre-Commit Hook Does
 
