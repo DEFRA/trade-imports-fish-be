@@ -39,7 +39,7 @@ This starts:
 ### Option 2: Docker Only
 
 ```bash
-docker compose --profile infra up -d
+docker compose up -d mongodb floci
 ```
 
 ### Option 3: Local MongoDB Installation
