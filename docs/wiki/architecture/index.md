@@ -289,9 +289,9 @@ The Trade Imports Fish Backend follows a layered, three-tier architecture patter
 ### 4. Health Checks
 
 - **Endpoint**: `GET /health`
-- **Status**: UP when MongoDB is accessible
-- **Performance**: Fast-path filter bypasses business logic
-- **Liveness**: Returns 200 when healthy
+- **MongoDB checks**: Disabled by `management.health.mongo.enabled: false`; an UP result does not establish database connectivity
+- **Logging**: Health-check log events are suppressed by the Logback `HealthCheckFilter`
+- **HTTP status**: Returns 200 when the enabled health indicators report healthy
 
 ### 5. Actuator Endpoints
 
