@@ -9,8 +9,8 @@
     "install-deps": "npm run check-uv && uv python install 3.11 && uv sync --system-certs",
     "dev": "npm run check-uv && uv run mkdocs serve --livereload",
     "build": "npm run check-uv && uv run mkdocs build",
-    "lint": "npx markdownlint -p ../.gitignore .",
-    "lint:fix": "npx markdownlint --fix -p ../.gitignore ."
+    "lint": "npx markdownlint -p ../.gitignore -i node_modules/ .",
+    "lint:fix": "npx markdownlint --fix -p ../.gitignore -i node_modules/ ."
   },
   "devDependencies": {
     "markdownlint-cli": "^0.50.0"
