@@ -208,14 +208,11 @@ Monitor performance via actuator:
 
 ```bash
 # Overall metrics
-curl http://localhost:8085/actuator/metrics
-
-# HTTP requests
-curl http://localhost:8085/actuator/metrics/http.server.requests
+curl http://localhost:8085/metrics
 
 # JVM metrics
-curl http://localhost:8085/actuator/metrics/jvm.memory.usage
-curl http://localhost:8085/actuator/metrics/jvm.threads.live
+curl http://localhost:8085/metrics/jvm.memory.used
+curl http://localhost:8085/metrics/jvm.threads.live
 ```
 
 ### Key Performance Indicators
