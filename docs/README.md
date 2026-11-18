@@ -111,13 +111,9 @@ Then reload your shell:
 source ~/.bashrc   # or ~/.zshrc for zsh
 ```
 
-**Option B: Git Configuration (Repository-specific)**
+**Git credential configuration is not sufficient**
 
-Store it in your git config:
-
-```bash
-git config --global credential.https://github.com.token your_token_here
-```
+The hook requires an exported `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, or `GITHUB_TOKEN`. Setting a Git credential configuration key does not satisfy this requirement; use a shell profile or the session export below.
 
 **Option C: Environment Variable for One Session**
 
