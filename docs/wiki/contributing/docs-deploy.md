@@ -234,7 +234,7 @@ The workflow pins the `astral-sh/setup-uv` action to a specific commit hash:
 
 ```yaml
 - name: Install uv
-  uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e
+  uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
 ```
 
 This provides:
@@ -245,9 +245,9 @@ This provides:
 
 To update the pinned hash, maintainers must:
 
-1. Decide on new version
+1. Decide on new version at [github.com/astral-sh/setup-uv/releases](https://github.com/astral-sh/setup-uv/releases)
 2. Find commit hash of that release
-3. Update the hash in workflow
+3. Update the hash and version comment in workflow
 4. Create PR and review
 
 ## Troubleshooting
