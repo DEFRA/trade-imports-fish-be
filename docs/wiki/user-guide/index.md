@@ -28,7 +28,7 @@ curl http://localhost:8085/actuator
 ```bash
 mongosh
 > use trade-imports-fish
-> db.collections()
+> db.getCollectionNames()
 ```
 
 ## Getting Help
