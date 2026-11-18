@@ -186,11 +186,7 @@ Returns 200 OK when application is running.
 
 ### Readiness Probe
 
-```bash
-curl http://localhost:8085/actuator/health/readiness
-```
-
-Returns 200 OK when application is ready to serve requests.
+A dedicated readiness health group is not explicitly enabled by the repository configuration for local runs. To expose one, enable `management.endpoint.health.probes.enabled`; with the configured management base path `/`, the URL is `http://localhost:8085/health/readiness`. MongoDB health checks are disabled, so this alone does not establish database readiness.
 
 ## Structured Logging Best Practices
 
