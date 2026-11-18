@@ -9,6 +9,7 @@ spring:
     deserialization:
       fail-on-unknown-properties: true
       fail-on-numbers-for-enums: true
+      fail-on-trailing-tokens: true
   data:
     mongodb:
       uri: ${MONGO_URI:mongodb://localhost:27017/}

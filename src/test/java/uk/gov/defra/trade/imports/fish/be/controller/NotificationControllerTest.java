@@ -27,6 +27,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import uk.gov.defra.trade.imports.fish.be.configuration.StrictUuidBindingAdvice;
 import uk.gov.defra.trade.imports.fish.be.domain.Notification;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationStatus;
 import uk.gov.defra.trade.imports.fish.be.domain.TransportMethod;
@@ -48,9 +49,10 @@ class NotificationControllerTest {
             .addModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .enable(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS).build();
+            .enable(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS)
+            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
         mvc = MockMvcBuilders.standaloneSetup(new NotificationController(service))
-            .setControllerAdvice(new GlobalExceptionHandler())
+            .setControllerAdvice(new GlobalExceptionHandler(), new StrictUuidBindingAdvice())
             .setMessageConverters(new MappingJackson2HttpMessageConverter(mapper)).build();
     }
 
@@ -101,6 +103,8 @@ class NotificationControllerTest {
         "{\"organisationId\":1.5,\"transportMethod\":\"air-freight\"}",
         "{\"organisationId\":true,\"transportMethod\":\"air-freight\"}",
         "{\"organisationId\":{\"id\":\"importer\"},\"transportMethod\":\"air-freight\"}",
+        "{\"organisationId\":\"importer\",\"transportMethod\":\"air-freight\"}{\"organisationId\":\"other\"}",
+        "{\"organisationId\":\"importer\",\"transportMethod\":\"air-freight\"} garbage",
         "{broken"
     })
     void invalidBodiesReturnProblemDetailWithoutPersistence(String body) throws Exception {
@@ -130,6 +134,34 @@ class NotificationControllerTest {
             .andExpect(status().isBadRequest());
         mvc.perform(get("/notifications/invalid")).andExpect(status().isBadRequest());
         verifyNoInteractions(service);
+    }
+
+    @Test
+    void trailingContentIsRejectedOnUpdate() throws Exception {
+        mvc.perform(put("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content(validBody() + "{\"organisationId\":\"other\"}"))
+            .andExpect(status().isBadRequest());
+        verifyNoInteractions(service);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1-1-1-1-1", "00000001-0001-0001-0001-1", "{12345678-1234-1234-1234-123456789012}",
+        "12345678123412341234123456789012", "1234567g-1234-1234-1234-123456789012"})
+    void nonCanonicalUuidsAreRejectedWithoutServiceInteraction(String uuid) throws Exception {
+        mvc.perform(post("/notifications").header("Idempotency-Key", uuid)
+                .contentType(MediaType.APPLICATION_JSON).content(validBody()))
+            .andExpect(status().isBadRequest()).andExpect(jsonPath("$.title").value("Validation Error"));
+        mvc.perform(get("/notifications/{id}", uuid)).andExpect(status().isBadRequest());
+        mvc.perform(put("/notifications/{id}", uuid).contentType(MediaType.APPLICATION_JSON).content(validBody()))
+            .andExpect(status().isBadRequest());
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void upperCaseCanonicalUuidIsAccepted() throws Exception {
+        when(service.findById(id)).thenReturn(notification());
+        mvc.perform(get("/notifications/{id}", id.toString().toUpperCase()))
+            .andExpect(status().isOk());
     }
 
     @Test
