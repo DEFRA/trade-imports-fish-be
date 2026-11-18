@@ -53,7 +53,7 @@ copilot --config-dir="$PERMISSIONS_DIR" -p "$PROMPT" -s \
   --deny-tool='shell'
 
 if [ -n "$(git status --porcelain -- docs)" ]; then
-  ./node_modules/.bin/prettier --write docs >/dev/null
+  (cd docs && npm run lint:fix) >/dev/null
   git add docs
   echo "update-docs: docs/ updated and staged"
 else
