@@ -7,7 +7,6 @@ on:
     paths:
       - 'docs/**'
 
-on:
   push:
     branches:
       - main
