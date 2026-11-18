@@ -74,15 +74,15 @@ mvn integration-test
 
 ### Specific Test Class
 
-```bash
-mvn test -Dtest=UserValidatorTest
-```
+~~~bash
+mvn test -Dtest=ExampleServiceTest
+~~~
 
 ### Specific Test Method
 
-```bash
-mvn test -Dtest=UserValidatorTest#testValidUser
-```
+~~~bash
+mvn test -Dtest=ExampleServiceTest#create_savesEntitySetsCreatedTimestampAndReturnsResult
+~~~
 
 ## Code Coverage
 
