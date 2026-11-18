@@ -173,3 +173,9 @@ coverage.xml
 
 # AI reference files
 Claude.md
+
+# Documentation
+docs/site/
+docs/.venv*/
+docs/node_modules/
+docs/uv.lock
