@@ -190,6 +190,25 @@ class NotificationIT {
         assertThat(repository.findById(id)).isEmpty();
     }
 
+    @Test
+    void rejectsNonCanonicalUuidsAndTrailingJsonBeforePersistence() throws Exception {
+        String shortForm = "1-1-1-1-1";
+        mockMvc.perform(post("/notifications").header("Idempotency-Key", shortForm)
+                .contentType(MediaType.APPLICATION_JSON).content(body("air-freight")))
+            .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/notifications/{id}", shortForm)).andExpect(status().isBadRequest());
+        mockMvc.perform(put("/notifications/{id}", shortForm)
+                .contentType(MediaType.APPLICATION_JSON).content(body("air-freight")))
+            .andExpect(status().isBadRequest());
+        assertThat(repository.findById("00000001-0001-0001-0001-000000000001")).isEmpty();
+
+        String id = UUID.randomUUID().toString();
+        mockMvc.perform(post("/notifications").header("Idempotency-Key", id)
+                .contentType(MediaType.APPLICATION_JSON).content(body("air-freight") + " trailing"))
+            .andExpect(status().isBadRequest());
+        assertThat(repository.findById(id)).isEmpty();
+    }
+
     private int create(String id) {
         try {
             return mockMvc.perform(post("/notifications").header("Idempotency-Key", id)
