@@ -183,15 +183,15 @@ git commit --no-verify -m "your message"
 
 **Solution:**
 
-Install from [github.com/github/gh-copilot](https://github.com/github/gh-copilot):
+Install [GitHub Copilot CLI](https://github.com/github/copilot-cli):
 
-```bash
+~~~bash
 # macOS (Homebrew)
-brew install gh copilot
+brew install copilot-cli
 
-# Or via gh CLI
-gh extension install github/gh-copilot
-```
+# Or via npm
+npm install -g @github/copilot
+~~~
 
 Verify:
 
