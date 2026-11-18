@@ -129,10 +129,10 @@ Via Spring Boot Actuator:
 
 ```bash
 # List all metrics
-curl http://localhost:8085/actuator/metrics
+curl http://localhost:8085/metrics
 
 # Get specific metric
-curl http://localhost:8085/actuator/metrics/example_created
+curl http://localhost:8085/metrics/example_created
 ```
 
 Response example:
