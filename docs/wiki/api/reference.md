@@ -177,7 +177,7 @@ The following endpoints manage Example resources (CRUD operations).
   "id": "507f1f77bcf86cd799439011",
   "name": "Updated Example",
   "value": "Updated Value",
-  "counter": 1,
+  "counter": null,
   "created": "2024-01-01T10:30:00"
 }
 ```
