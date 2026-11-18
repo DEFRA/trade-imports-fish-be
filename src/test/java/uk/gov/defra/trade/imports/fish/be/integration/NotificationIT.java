@@ -114,7 +114,7 @@ class NotificationIT {
         assertThat(stored.keySet()).contains("_id", "reference", "status", "organisationId",
             "createdAt", "updatedAt", "transportMethod")
             .doesNotContain("createdBy", "updatedBy", "created", "name", "value");
-        assertThat(stored.get("createdAt")).isEqualTo(Date.from(Instant.parse(createdAt)));
+        assertThat(stored).containsEntry("createdAt", Date.from(Instant.parse(createdAt)));
         assertThat(stored.get("updatedAt")).isInstanceOf(Date.class);
         assertThat(output.toString()).contains(traceId).contains("Created draft notification");
 

@@ -83,9 +83,11 @@ class NotificationServiceTest {
     @Test
     void rejectsReplayWithDifferentOrganisationOrTransport() {
         when(repository.findById(id.toString())).thenReturn(Optional.of(notification()));
-        assertThatThrownBy(() -> service.create(id, new SaveNotificationRequest("another", TransportMethod.AIR_FREIGHT)))
+        var differentOrganisation = new SaveNotificationRequest("another", TransportMethod.AIR_FREIGHT);
+        var differentTransport = new SaveNotificationRequest("importer", TransportMethod.ROAD_VEHICLE);
+        assertThatThrownBy(() -> service.create(id, differentOrganisation))
             .isInstanceOf(ConflictException.class);
-        assertThatThrownBy(() -> service.create(id, new SaveNotificationRequest("importer", TransportMethod.ROAD_VEHICLE)))
+        assertThatThrownBy(() -> service.create(id, differentTransport))
             .isInstanceOf(ConflictException.class);
     }
 
@@ -100,7 +102,8 @@ class NotificationServiceTest {
         assertThat(result.created()).isFalse();
         assertThat(result.notification()).isEqualTo(notification());
 
-        assertThatThrownBy(() -> service.create(id, new SaveNotificationRequest("importer", TransportMethod.ROAD_VEHICLE)))
+        var updatedPayload = new SaveNotificationRequest("importer", TransportMethod.ROAD_VEHICLE);
+        assertThatThrownBy(() -> service.create(id, updatedPayload))
             .isInstanceOf(ConflictException.class);
     }
 
