@@ -124,5 +124,5 @@ curl http://localhost:8085/health
 
 - Check the [Getting Started Guide](../getting-started/index.md)
 - Review the [Configuration Guide](configuration.md)
-- Check application logs in `logs/` directory
+- Check the application console output, or use `docker compose logs trade-imports-fish-be` for the containerized service
 - Create an issue on [GitHub](https://github.com/DEFRA/trade-imports-fish-be/issues)
