@@ -14,7 +14,7 @@ on:
       - 'docs/**'
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
