@@ -64,7 +64,7 @@
 1. Increase JVM heap size:
 
    ```bash
-   JAVA_OPTS="-Xmx2048m" mvn spring-boot:run
+   mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xmx2048m"
    ```
 
 2. Check memory usage:
