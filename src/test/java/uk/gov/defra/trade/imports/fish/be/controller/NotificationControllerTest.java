@@ -97,11 +97,25 @@ class NotificationControllerTest {
         "{\"organisationId\":\"importer\",\"transportMethod\":\"air-freight\",\"id\":\"owned\"}",
         "{\"organisationId\":\"importer\",\"transportMethod\":\"air-freight\",\"createdAt\":\"2026-01-01T00:00:00Z\"}",
         "{\"organisationId\":\"importer\",\"transportMethod\":\"air-freight\",\"updatedAt\":\"2026-01-01T00:00:00Z\"}",
+        "{\"organisationId\":123,\"transportMethod\":\"air-freight\"}",
+        "{\"organisationId\":1.5,\"transportMethod\":\"air-freight\"}",
+        "{\"organisationId\":true,\"transportMethod\":\"air-freight\"}",
+        "{\"organisationId\":{\"id\":\"importer\"},\"transportMethod\":\"air-freight\"}",
         "{broken"
     })
     void invalidBodiesReturnProblemDetailWithoutPersistence(String body) throws Exception {
         mvc.perform(post("/notifications").header("Idempotency-Key", id)
                 .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.title").value("Validation Error"));
+        verifyNoInteractions(service);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"123", "1.5", "true", "false"})
+    void nonStringOrganisationIdIsRejectedOnUpdate(String organisationId) throws Exception {
+        mvc.perform(put("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"organisationId\":" + organisationId + ",\"transportMethod\":\"air-freight\"}"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.title").value("Validation Error"));
         verifyNoInteractions(service);

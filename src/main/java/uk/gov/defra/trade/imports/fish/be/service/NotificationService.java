@@ -95,10 +95,13 @@ public class NotificationService {
     private CreationResult replay(Notification notification, SaveNotificationRequest request) {
         if (notification.getStatus() != NotificationStatus.DRAFT
             || !notification.getOrganisationId().equals(request.organisationId())
-            || notification.getTransportMethod() != request.transportMethod()) {
+            || notification.getCreationTransportMethod() != request.transportMethod()) {
             throw new ConflictException("Idempotency key has already been used with a different request");
         }
         log.info("Replayed draft creation with id: {}", notification.getId());
-        return new CreationResult(notification, false);
+        Notification original = new Notification(notification.getId(), notification.getReference(),
+            notification.getStatus(), notification.getOrganisationId(), notification.getCreatedAt(),
+            notification.getCreatedAt(), notification.getCreationTransportMethod());
+        return new CreationResult(original, false);
     }
 }

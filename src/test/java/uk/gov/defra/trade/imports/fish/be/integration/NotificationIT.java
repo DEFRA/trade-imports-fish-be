@@ -152,6 +152,44 @@ class NotificationIT {
         mockMvc.perform(get("/notifications/{id}", UUID.randomUUID())).andExpect(status().isNotFound());
     }
 
+    @Test
+    void replayAfterUpdateMatchesOriginalCreationRequest() throws Exception {
+        String id = UUID.randomUUID().toString();
+        String created = mockMvc.perform(post("/notifications").header("Idempotency-Key", id)
+                .contentType(MediaType.APPLICATION_JSON).content(body("air-freight")))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        mockMvc.perform(put("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content(body("road-vehicle")))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post("/notifications").header("Idempotency-Key", id)
+                .contentType(MediaType.APPLICATION_JSON).content(body("air-freight")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.transportMethod").value("air-freight"))
+            .andExpect(jsonPath("$.updatedAt").value((String) JsonPath.read(created, "$.createdAt")))
+            .andExpect(jsonPath("$.creationTransportMethod").doesNotExist());
+        mockMvc.perform(post("/notifications").header("Idempotency-Key", id)
+                .contentType(MediaType.APPLICATION_JSON).content(body("road-vehicle")))
+            .andExpect(status().isConflict());
+        mockMvc.perform(get("/notifications/{id}", id)).andExpect(status().isOk())
+            .andExpect(jsonPath("$.transportMethod").value("road-vehicle"));
+    }
+
+    @Test
+    void rejectsNonStringOrganisationIdOnCreateAndUpdate() throws Exception {
+        String id = UUID.randomUUID().toString();
+        for (String organisationId : new String[]{"123", "true"}) {
+            String invalid = "{\"organisationId\":" + organisationId + ",\"transportMethod\":\"air-freight\"}";
+            mockMvc.perform(post("/notifications").header("Idempotency-Key", id)
+                    .contentType(MediaType.APPLICATION_JSON).content(invalid))
+                .andExpect(status().isBadRequest());
+            mockMvc.perform(put("/notifications/{id}", id)
+                    .contentType(MediaType.APPLICATION_JSON).content(invalid))
+                .andExpect(status().isBadRequest());
+        }
+        assertThat(repository.findById(id)).isEmpty();
+    }
+
     private int create(String id) {
         try {
             return mockMvc.perform(post("/notifications").header("Idempotency-Key", id)
