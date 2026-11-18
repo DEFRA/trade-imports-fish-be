@@ -103,7 +103,7 @@
 ### Enable Debug Logging
 
 ```bash
-export SPRING_LOG_LEVEL=DEBUG
+export LOG_LEVEL=DEBUG
 mvn spring-boot:run
 ```
 
