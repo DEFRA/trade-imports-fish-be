@@ -87,13 +87,9 @@ Reload your shell:
 source ~/.bashrc   # or ~/.zshrc for zsh
 ```
 
-## Option B: Git Configuration
+## Option B: Copilot-Specific Environment Variable
 
-Store globally in git config:
-
-```bash
-git config --global credential.https://github.com.token your_token_here
-```
+Export `COPILOT_GITHUB_TOKEN=your_token_here` in the shell that will run Git, or add that export to your shell profile.
 
 ## Option C: Temporary (Current Session Only)
 
