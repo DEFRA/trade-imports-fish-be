@@ -5,6 +5,7 @@ This guide covers optimizing the Trade Imports Fish Backend for performance.
 ## Overview
 
 Performance optimization involves:
+
 - Database query optimization
 - Connection pooling
 - Caching strategies
@@ -31,13 +32,14 @@ spring:
 ### Recommended Settings
 
 | Setting | Development | Production |
-|---------|-------------|-----------|
+| --------- | ------------- | ----------- |
 | `min-size` | 5 | 20 |
 | `max-size` | 50 | 200 |
 | `max-wait-time-ms` | 2000 | 5000 |
 | `max-connection-idle-time-ms` | 60000 | 300000 |
 
 Adjust based on:
+
 - Expected concurrent requests
 - Database response time
 - Available server memory
@@ -52,6 +54,7 @@ private String name;
 ```
 
 Verify indexes in MongoDB:
+
 ```bash
 mongosh
 use trade-imports-fish-be
@@ -100,12 +103,13 @@ export JAVA_OPTS="-Xmx1g -Xms512m"
 Recommended values:
 
 | Environment | Min Heap | Max Heap |
-|-------------|----------|----------|
+| ------------- | ---------- | ---------- |
 | Development | 256m | 512m |
 | Testing | 512m | 1g |
 | Production | 1g | 4g |
 
 Adjust based on:
+
 - Concurrent users
 - Dataset size
 - Available system memory
@@ -121,7 +125,7 @@ export JAVA_OPTS="-Xmx1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
 Options:
 
 | Option | Benefit |
-|--------|---------|
+| -------- | --------- |
 | `UseG1GC` | Low latency GC |
 | `MaxGCPauseMillis=200` | Control max pause time |
 | `ParallelGCThreads=4` | GC concurrency |
@@ -219,7 +223,7 @@ curl http://localhost:8085/actuator/metrics/jvm.threads.live
 Monitor these metrics:
 
 | Metric | Target | Action If Exceeded |
-|--------|--------|-------------------|
+| -------- | -------- | ------------------- |
 | Response time | <200ms | Optimize queries, increase pool |
 | Error rate | <1% | Check logs, review error handling |
 | JVM memory | <80% | Increase heap, check for leaks |
@@ -257,6 +261,7 @@ jfr dump --output=analysis.html recording.jfr
 **Symptoms**: Slow API responses, high database load
 
 **Solutions**:
+
 1. Add indexes on frequently queried fields
 2. Use read preferences to distribute queries
 3. Implement caching
@@ -267,6 +272,7 @@ jfr dump --output=analysis.html recording.jfr
 **Symptoms**: Increasing memory usage over time, frequent GC
 
 **Solutions**:
+
 1. Enable heap dump: `-XX:+HeapDumpOnOutOfMemoryError`
 2. Analyze with Eclipse MAT
 3. Check for circular references
@@ -277,6 +283,7 @@ jfr dump --output=analysis.html recording.jfr
 **Symptoms**: "Cannot get a connection" errors, timeouts
 
 **Solutions**:
+
 1. Increase pool size
 2. Reduce query time
 3. Close connections properly

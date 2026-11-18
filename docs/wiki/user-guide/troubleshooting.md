@@ -9,21 +9,27 @@
 **Solutions**:
 
 1. **Check Java version**:
+
    ```bash
    java -version
    ```
+
    Ensure Java 25 is installed.
 
 2. **Check MongoDB connection**:
+
    ```bash
    mongosh --eval "db.version()"
    ```
 
 3. **Check for port conflicts**:
+
    ```bash
    lsof -i :8085
    ```
+
    If port 8085 is in use, change it in `application.yml`:
+
    ```yaml
    server:
      port: 8086
@@ -36,11 +42,13 @@
 **Solutions**:
 
 1. Verify MongoDB is running:
+
    ```bash
    docker ps | grep mongodb
    ```
 
 2. Check MongoDB logs:
+
    ```bash
    docker logs <container_id>
    ```
@@ -54,11 +62,13 @@
 **Solutions**:
 
 1. Increase JVM heap size:
+
    ```bash
    JAVA_OPTS="-Xmx2048m" mvn spring-boot:run
    ```
 
 2. Check memory usage:
+
    ```bash
    docker stats <container_id>
    ```
@@ -70,16 +80,19 @@
 **Solutions**:
 
 1. Find the process using the port:
+
    ```bash
    lsof -i :8085
    ```
 
 2. Kill the process:
+
    ```bash
    kill -9 <PID>
    ```
 
 3. Or change the port in configuration:
+
    ```yaml
    server:
      port: 8086

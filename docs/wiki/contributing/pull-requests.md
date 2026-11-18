@@ -114,6 +114,7 @@ Add screenshots for UI changes.
 ## Common Mistakes
 
 ❌ **Don't:**
+
 - Commit sensitive data (passwords, API keys)
 - Make unrelated changes in one PR
 - Ignore test failures
@@ -121,6 +122,7 @@ Add screenshots for UI changes.
 - Force push after opening PR
 
 ✅ **Do:**
+
 - Keep PRs focused and reasonably sized
 - Write clear commit messages
 - Include tests with your changes
@@ -130,7 +132,7 @@ Add screenshots for UI changes.
 ## PR Size Guidelines
 
 | Size | Max Files | Max Lines | Scope |
-|------|-----------|-----------|-------|
+| ------ | ----------- | ----------- | ------- |
 | Small | 3-5 | 100-200 | Single feature or fix |
 | Medium | 5-10 | 200-500 | Multi-file feature |
 | Large | 10+ | 500+ | Major feature (split if possible) |

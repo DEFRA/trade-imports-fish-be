@@ -13,11 +13,13 @@ Test individual components in isolation.
 **Location**: `src/test/java/**/*Test.java`
 
 **Run**:
+
 ```bash
 mvn test
 ```
 
 **Example**:
+
 ```java
 @Test
 void should_validateUser_when_validData() {
@@ -33,6 +35,7 @@ Test multiple components working together.
 **Location**: `src/test/java/**/*IT.java`
 
 **Run**:
+
 ```bash
 mvn verify
 ```
@@ -44,6 +47,7 @@ mvn verify
 Test complete application workflows.
 
 **Run**:
+
 ```bash
 mvn clean verify -DskipITs=false
 ```
@@ -91,6 +95,7 @@ mvn clean verify jacoco:report
 View report: `target/site/jacoco/index.html`
 
 **Coverage Goals**:
+
 - Overall: >80%
 - Core logic: >85%
 - Controllers: >75%
@@ -192,6 +197,7 @@ void should_getUserById_when_found() {
 ### Issue: Integration Tests Are Slow
 
 **Solution**: Use `@DataMongoTest` to test only data layer, or run in parallel:
+
 ```bash
 mvn test -DuseUnlimitedThreads=true
 ```
@@ -199,6 +205,7 @@ mvn test -DuseUnlimitedThreads=true
 ### Issue: MongoDB Connection Timeouts
 
 **Solution**: Ensure MongoDB is running and accessible:
+
 ```bash
 docker ps | grep mongodb
 ```

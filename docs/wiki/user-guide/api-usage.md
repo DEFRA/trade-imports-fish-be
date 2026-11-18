@@ -17,6 +17,7 @@ GET /health
 ```
 
 Response:
+
 ```json
 {
   "status": "UP"

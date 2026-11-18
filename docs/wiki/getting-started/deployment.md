@@ -35,6 +35,7 @@ docker compose up -d
 ```
 
 This starts:
+
 - Application (port 8085)
 - MongoDB
 - Floci (AWS S3/SQS emulator)
@@ -45,7 +46,7 @@ This starts:
 ### Required Environment Variables
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| ---------- | --------- | ------------- |
 | `PORT` | 8085 | Server port |
 | `MONGO_URI` | `mongodb://localhost:27017/` | MongoDB connection string |
 | `MONGO_DATABASE` | `trade-imports-fish-be` | Database name |
@@ -53,7 +54,7 @@ This starts:
 ### Optional Environment Variables
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| ---------- | --------- | ------------- |
 | `AWS_REGION` | `eu-west-2` | AWS region |
 | `AWS_EMF_ENABLED` | `true` | CloudWatch EMF metrics |
 | `LOG_LEVEL` | `info` | Root logging level |
@@ -68,6 +69,7 @@ curl http://localhost:8085/health
 ```
 
 Response:
+
 ```json
 {
   "status": "UP"
@@ -102,11 +104,13 @@ Response:
 ### Application fails to start
 
 Check logs:
+
 ```bash
 docker logs <container_id>
 ```
 
 Verify MongoDB connection:
+
 ```bash
 mongodb-shell mongodb://host:27017
 ```
@@ -114,6 +118,7 @@ mongodb-shell mongodb://host:27017
 ### High memory usage
 
 Adjust JVM heap settings:
+
 ```bash
 export JAVA_OPTS="-Xmx1g -Xms512m"
 ```
@@ -121,11 +126,13 @@ export JAVA_OPTS="-Xmx1g -Xms512m"
 ### Slow requests
 
 Enable debug logging:
+
 ```bash
 export LOG_LEVEL=debug
 ```
 
 Check metrics:
+
 ```bash
 curl http://localhost:8085/actuator/metrics
 ```

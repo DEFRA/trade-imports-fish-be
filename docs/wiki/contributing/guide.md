@@ -8,7 +8,7 @@
 
 ## Getting Started
 
-1. Fork the repository: https://github.com/DEFRA/trade-imports-fish-be
+1. Fork the repository: <https://github.com/DEFRA/trade-imports-fish-be>
 2. Clone your fork: `git clone https://github.com/your-username/trade-imports-fish-be.git`
 3. Add upstream: `git remote add upstream https://github.com/DEFRA/trade-imports-fish-be.git`
 4. [Setup development environment](../getting-started/setup.md)
@@ -22,6 +22,7 @@ git checkout -b feature/your-feature-name
 ```
 
 Use descriptive branch names:
+
 - `feature/add-user-validation`
 - `fix/mongodb-connection-issue`
 - `docs/api-documentation`
@@ -54,6 +55,7 @@ git commit -m "Add user validation for imports"
 ```
 
 Good commit message format:
+
 - First line: short summary (50 chars or less)
 - Blank line
 - Detailed explanation (if needed)

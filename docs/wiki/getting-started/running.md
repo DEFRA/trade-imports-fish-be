@@ -46,6 +46,7 @@ Once started, the application will:
 3. Expose the REST API
 
 By default:
+
 - **Base URL**: `http://localhost:8085`
 - **Health Check**: `http://localhost:8085/health`
 - **Actuator**: `http://localhost:8085/actuator`

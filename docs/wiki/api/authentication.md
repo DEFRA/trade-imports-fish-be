@@ -47,7 +47,7 @@ curl -H "Authorization: Bearer $API_TOKEN" \
 ## Common Authentication Errors
 
 | Status | Error | Cause |
-|--------|-------|-------|
+| -------- | ------- | ------- |
 | 401 | Unauthorized | Missing or invalid token |
 | 403 | Forbidden | Insufficient permissions |
 | 400 | Bad Request | Invalid token format |

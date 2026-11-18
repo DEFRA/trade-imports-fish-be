@@ -37,6 +37,7 @@ Logs are automatically formatted in ECS format for structured logging and analys
 ### Setting Log Levels
 
 Via `application.yml`:
+
 ```yaml
 logging:
   level:
@@ -46,6 +47,7 @@ logging:
 ```
 
 Via environment variable:
+
 ```bash
 export LOG_LEVEL=DEBUG
 ```
@@ -53,7 +55,7 @@ export LOG_LEVEL=DEBUG
 ### Available Log Levels
 
 | Level | Purpose | Use When |
-|-------|---------|----------|
+| ------- | --------- | ---------- |
 | `TRACE` | Very detailed | Extreme debugging |
 | `DEBUG` | Detailed diagnostic | Development, troubleshooting |
 | `INFO` | General information | Normal operation, key events |
@@ -74,6 +76,7 @@ X-CDP-Request-ID: abc123def456
 ```
 
 This ID is:
+
 - Extracted from request headers
 - Added to MDC for automatic inclusion in logs
 - Propagated to downstream services
@@ -82,12 +85,14 @@ This ID is:
 ### Using Trace IDs
 
 Send a custom trace ID:
+
 ```bash
 curl -H "X-CDP-Request-ID: my-custom-id" \
   http://localhost:8085/health
 ```
 
 Retrieve logs by trace ID:
+
 ```bash
 # If using Elasticsearch
 curl -X GET "localhost:9200/logs-*/_search" \
@@ -102,7 +107,7 @@ The application publishes metrics via Micrometer to CloudWatch.
 ### Built-in Metrics
 
 | Metric | Description |
-|--------|-------------|
+| -------- | ------------- |
 | `http.server.requests` | HTTP request metrics (count, timing, errors) |
 | `jvm.memory.usage` | JVM memory usage |
 | `jvm.threads.peak` | Peak thread count |
@@ -113,7 +118,7 @@ The application publishes metrics via Micrometer to CloudWatch.
 The application publishes custom business metrics:
 
 | Metric | Description |
-|--------|-------------|
+| -------- | ------------- |
 | `example_created` | Counter for created examples |
 | `controller.*.time` | Timing metrics for controller methods |
 | `controller.*.count` | Request count metrics |
@@ -121,6 +126,7 @@ The application publishes custom business metrics:
 ### Accessing Metrics
 
 Via Spring Boot Actuator:
+
 ```bash
 # List all metrics
 curl http://localhost:8085/actuator/metrics
@@ -130,6 +136,7 @@ curl http://localhost:8085/actuator/metrics/example_created
 ```
 
 Response example:
+
 ```json
 {
   "name": "example_created",
@@ -158,7 +165,7 @@ export AWS_REGION=eu-west-2
 ### CloudWatch EMF Configuration
 
 | Variable | Default | Purpose |
-|----------|---------|---------|
+| ---------- | --------- | --------- |
 | `AWS_EMF_ENABLED` | `true` | Enable EMF metrics |
 | `AWS_EMF_NAMESPACE` | `trade-imports-fish-be` | CloudWatch namespace |
 | `AWS_EMF_ENVIRONMENT` | `Local` | Environment name |
@@ -235,11 +242,13 @@ log.error("Failed to process payment", exception);
 ### Too much logging
 
 Increase log level to `WARN` or `ERROR`:
+
 ```bash
 export LOG_LEVEL=WARN
 ```
 
 Or configure specific packages:
+
 ```yaml
 logging:
   level:
@@ -250,6 +259,7 @@ logging:
 ### Missing trace IDs
 
 Ensure `RequestTracingFilter` is active:
+
 - Check `RequestTracingFilter` bean is loaded
 - Verify filter order is `HIGHEST_PRECEDENCE`
 - Confirm MDC is properly configured in Logback

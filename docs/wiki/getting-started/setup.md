@@ -31,6 +31,7 @@ docker compose --profile infra up -d
 ```
 
 This starts:
+
 - MongoDB
 - Floci (for AWS services: S3, SQS)
 - Redis

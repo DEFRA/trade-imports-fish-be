@@ -30,7 +30,7 @@ npm run install-deps        # Install Python + MkDocs
 npm run dev                 # Start development server
 ```
 
-Then open your browser to: **http://localhost:8000**
+Then open your browser to: **<http://localhost:8000>**
 
 **To stop the server:** Press `Ctrl+C` in your terminal.
 
@@ -134,11 +134,11 @@ scoop install uv
 
 **Option 4: Manual installation**
 
-Visit https://docs.astral.sh/uv/getting-started/installation/ for platform-specific installers.
+Visit <https://docs.astral.sh/uv/getting-started/installation/> for platform-specific installers.
 
 **Option 5: Pre-built binaries**
 
-Download from https://github.com/astral-sh/uv/releases/
+Download from <https://github.com/astral-sh/uv/releases/>
 
 Verify installation:
 
@@ -163,6 +163,7 @@ npm run install-deps
 ```
 
 This will:
+
 1. Install Python 3.11 (if needed)
 2. Create a Python virtual environment
 3. Install MkDocs 1.6.1+
@@ -191,6 +192,7 @@ npm run dev
 ```
 
 Output will show:
+
 ```
 INFO     -  Building documentation...
 INFO     -  Documentation built successfully
@@ -198,9 +200,9 @@ INFO     -  Documentation built successfully
 [10:30:00] Watch mode enabled. Press 'Ctrl+C' to quit.
 ```
 
-Open your browser to: **http://localhost:8000**
+Open your browser to: **<http://localhost:8000>**
 
-### Features:
+### Features
 
 - ✅ Live reload on file changes
 - ✅ Full-text search across all pages
@@ -471,7 +473,7 @@ The GitHub Actions workflow (`.github/workflows/docs-deploy.yml`) will:
 6. Upload to GitHub Pages
 7. Deploy
 
-**Published URL:** https://defra.github.io/trade-imports-fish-be
+**Published URL:** <https://defra.github.io/trade-imports-fish-be>
 
 ### Manual Deployment
 
@@ -492,21 +494,25 @@ To deploy manually:
 **Solution:** Install uv using one of these methods (see [Installation Step 2](#step-2-install-uv-python-package-manager)):
 
 **On macOS (Recommended):**
+
 ```bash
 brew install uv
 ```
 
 **On Linux/Windows with pip:**
+
 ```bash
 pip install uv
 ```
 
 **Then verify:**
+
 ```bash
 uv --version    # Should show: uv 0.13.0 or higher
 ```
 
 **After installing uv, run:**
+
 ```bash
 cd docs
 npm install
@@ -519,7 +525,7 @@ npm run install-deps
 
 **Solution:**
 
-1. Download Python 3.11+ from https://www.python.org/
+1. Download Python 3.11+ from <https://www.python.org/>
 2. Install it on your system
 3. Verify: `python3 --version`
 4. Then: `npm run install-deps`
@@ -536,7 +542,7 @@ Use a different port:
 uv run mkdocs serve --dev-addr 127.0.0.1:8001
 ```
 
-Then visit: http://localhost:8001
+Then visit: <http://localhost:8001>
 
 ### Slow Installation
 
@@ -591,6 +597,7 @@ npm run install-deps  # Try again
 ### Still Having Issues?
 
 1. Verify all prerequisites are installed:
+
    ```bash
    node --version      # Should be v24.x
    npm --version       # Should be 10.x+
@@ -610,12 +617,14 @@ npm run install-deps  # Try again
 ### Features
 
 ✨ **Theme & UI:**
+
 - Material for MkDocs (professional, responsive design)
 - Dark/light mode toggle
 - Mobile-friendly interface
 - Beautiful typography
 
 ✨ **Functionality:**
+
 - Full-text search across all pages
 - Code syntax highlighting (Java, Bash, Python, etc.)
 - Tabbed content sections
@@ -624,12 +633,14 @@ npm run install-deps  # Try again
 - Responsive design
 
 ✨ **Development:**
+
 - Live reload development server
 - Markdown linting with auto-fix
 - Instant feedback on changes
 - File watching
 
 ✨ **Automation:**
+
 - GitHub Actions workflow
 - Automatic GitHub Pages deployment
 - Triggered on push to main branch
@@ -637,7 +648,7 @@ npm run install-deps  # Try again
 ### Technology Stack
 
 | Component | Version | Purpose |
-|-----------|---------|---------|
+| ----------- | --------- | --------- |
 | **MkDocs** | 1.6.1+ | Static site generator |
 | **Material for MkDocs** | 9.7.6+ | Professional theme |
 | **Python** | 3.11+ | MkDocs runtime |
@@ -664,7 +675,7 @@ npm run install-deps  # Try again
 1. ✅ Install uv: `brew install uv` (or see [Installation Step 2](#step-2-install-uv-python-package-manager))
 2. ✅ Run setup: `cd docs && npm install && npm run install-deps`
 3. ✅ Start dev server: `npm run dev`
-4. ✅ Open browser: http://localhost:8000
+4. ✅ Open browser: <http://localhost:8000>
 5. ✅ Review documentation structure
 6. ✅ Read [development workflow](#development-workflow)
 
@@ -688,18 +699,18 @@ npm run install-deps  # Try again
 
 ### Resources
 
-- **MkDocs Documentation:** https://www.mkdocs.org/
-- **Material Theme:** https://squidfunk.github.io/mkdocs-material/
-- **Markdown Guide:** https://www.markdownguide.org/
-- **uv Documentation:** https://docs.astral.sh/uv/
-- **GitHub Actions:** https://docs.github.com/actions
+- **MkDocs Documentation:** <https://www.mkdocs.org/>
+- **Material Theme:** <https://squidfunk.github.io/mkdocs-material/>
+- **Markdown Guide:** <https://www.markdownguide.org/>
+- **uv Documentation:** <https://docs.astral.sh/uv/>
+- **GitHub Actions:** <https://docs.github.com/actions>
 
 ---
 
 ## Summary
 
 | Task | Command |
-|------|---------|
+| ------ | --------- |
 | Install uv | `brew install uv` (or [see alternatives](#step-2-install-uv-python-package-manager)) |
 | First-time setup | `npm install && npm run install-deps` |
 | Start development | `npm run dev` |

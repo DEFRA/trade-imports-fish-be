@@ -131,7 +131,7 @@ server:
 ### Headers to Set
 
 | Header | Value | Purpose |
-|--------|-------|---------|
+| -------- | ------- | --------- |
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` | HTTPS enforcement |
 | `X-Content-Type-Options` | `nosniff` | Prevent MIME sniffing |
 | `X-Frame-Options` | `DENY` | Clickjacking protection |
@@ -264,6 +264,7 @@ Before deploying to production, verify:
 ### Detecting Security Issues
 
 Monitor for:
+
 - Unusual error rates
 - Authentication failures
 - Slow queries (possible injection attempts)

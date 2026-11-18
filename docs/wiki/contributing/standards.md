@@ -7,7 +7,7 @@
 - **Formatting**: Follow Google Java Style Guide
 - **Line Length**: Max 120 characters
 - **Indentation**: 4 spaces
-- **Naming**: 
+- **Naming**:
   - Classes: PascalCase
   - Methods: camelCase
   - Constants: UPPER_SNAKE_CASE

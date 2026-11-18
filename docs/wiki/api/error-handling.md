@@ -7,7 +7,7 @@ The API returns standard HTTP status codes and structured error responses.
 ## HTTP Status Codes
 
 | Code | Meaning | Description |
-|------|---------|-------------|
+| ------ | --------- | ------------- |
 | 200 | OK | Request succeeded |
 | 201 | Created | Resource created successfully |
 | 400 | Bad Request | Invalid request parameters |
@@ -38,6 +38,7 @@ The API returns standard HTTP status codes and structured error responses.
 **Cause**: Invalid request parameters or format.
 
 **Example**:
+
 ```json
 {
   "error": {
@@ -59,6 +60,7 @@ The API returns standard HTTP status codes and structured error responses.
 **Cause**: Requested resource does not exist.
 
 **Example**:
+
 ```json
 {
   "error": {

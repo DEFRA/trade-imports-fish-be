@@ -33,6 +33,8 @@ Welcome! We appreciate contributions to the Trade Imports Fish Backend.
 - [Running the Application](../getting-started/running.md)
 - [Testing](quality/index.md) - Running tests
 - [Code Standards](standards.md) - Coding conventions
+- [Documentation Deployment](docs-deploy.md) - How docs are built and deployed
+- [Documentation Update Workflow](docs-update-workflow.md) - PR validation for docs
 
 ## Getting Help
 

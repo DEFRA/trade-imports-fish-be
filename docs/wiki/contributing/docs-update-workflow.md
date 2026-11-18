@@ -81,6 +81,7 @@ docs/wiki/
 Add this label to your PR if your changes **do not** require documentation updates:
 
 ✅ **Good use cases:**
+
 - Internal code refactoring (no user impact)
 - Bug fixes in internal utilities
 - Test additions or improvements
@@ -90,6 +91,7 @@ Add this label to your PR if your changes **do not** require documentation updat
 - Code cleanup or formatting
 
 ❌ **Do NOT use 'no-docs' for:**
+
 - New user-facing features
 - API endpoint changes
 - Configuration option changes
@@ -101,6 +103,7 @@ Add this label to your PR if your changes **do not** require documentation updat
 ### How to Add the Label
 
 **Via GitHub UI:**
+
 1. Open your PR
 2. Click "Labels" on the right sidebar
 3. Search for "no-docs"
@@ -108,6 +111,7 @@ Add this label to your PR if your changes **do not** require documentation updat
 5. The workflow will automatically skip the check
 
 **Via GitHub CLI:**
+
 ```bash
 gh pr edit <PR_NUMBER> --add-label "no-docs"
 ```
@@ -136,6 +140,7 @@ Error: No changes found in docs/wiki directory.
 ```
 
 **How to fix:**
+
 1. Update relevant documentation files in `docs/wiki/`
 2. Commit and push changes
 3. Workflow will automatically re-run
@@ -164,6 +169,7 @@ Thank you for keeping the documentation up to date! 🎉
 ### GitHub Actions Tab
 
 View full details:
+
 1. Go to repository → Actions tab
 2. Look for "Documentation Update Checker"
 3. Click on your PR run
@@ -323,12 +329,14 @@ jobs:
 ### Q: Can I merge if the check fails?
 
 **A:** No, the check must pass before merging. You must either:
+
 1. Update documentation, OR
 2. Add 'no-docs' label if appropriate
 
 ### Q: How do I update documentation?
 
 **A:** Edit Markdown files in `docs/wiki/`. Refer to [MkDocs documentation setup guide](https://github.com/DEFRA/trade-imports-fish-be/blob/main/docs/README.md) for guidelines on:
+
 - File structure
 - Adding new pages
 - Markdown features
@@ -359,6 +367,7 @@ jobs:
 ### Workflow shows error but I updated docs
 
 **Solution:**
+
 1. Verify files are in `docs/wiki/` directory
 2. Ensure files are committed (not just staged)
 3. Push commits to your branch
@@ -368,9 +377,11 @@ jobs:
 ### Can't find 'no-docs' label
 
 **Solution:**
+
 1. Labels might need to be created first
 2. Ask a maintainer to create the label
 3. Or use the GitHub CLI:
+
    ```bash
    gh label create "no-docs" -d "Skip documentation check"
    ```
@@ -378,6 +389,7 @@ jobs:
 ### Workflow stuck or not running
 
 **Solution:**
+
 1. Close and reopen the PR
 2. Push an empty commit: `git commit --allow-empty -m "re-trigger workflow"`
 3. Check GitHub Actions tab for full details
@@ -392,6 +404,7 @@ This project has two documentation-related workflows:
 ## Support
 
 For questions or issues:
+
 1. Check this guide first
 2. Review the example scenarios above
 3. Ask in PR comments or team chat

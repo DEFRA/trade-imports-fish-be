@@ -100,9 +100,11 @@ New step-by-step procedures should be:
 Use tags to categorize documentation (if frontmatter is added):
 
 **Sections** (required):
+
 - `getting-started`, `user-guide`, `api`, `architecture`, `configuration`, `contributing`
 
 **Topics** (optional, use as needed):
+
 - `commands` - CLI or npm commands
 - `validation` - Input validation and testing
 - `testing` - Test setup and execution

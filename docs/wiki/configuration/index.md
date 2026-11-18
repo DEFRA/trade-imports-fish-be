@@ -45,6 +45,7 @@ Local development overrides.
 Location: `src/main/resources/application-local.yml`
 
 Example:
+
 ```yaml
 logging:
   level:
