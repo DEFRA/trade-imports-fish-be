@@ -13,7 +13,7 @@ The Trade Imports Fish Backend provides REST APIs for managing example records, 
 ## Health & Monitoring
 
 - **Health Check**: `GET /health`
-- **Actuator Endpoints**: `GET /actuator/*` (health, metrics, info, cache)
+- **Management Endpoints**: `GET /health`, `GET /metrics`, and `GET /info` (root paths, as configured in `application.yml`)
 - **Swagger UI**: `http://localhost:8085/swagger-ui.html`
 - **OpenAPI Spec**: `http://localhost:8085/v3/api-docs`
 

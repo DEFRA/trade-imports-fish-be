@@ -16,7 +16,7 @@ Welcome to the Trade Imports Fish Backend documentation. This is a Spring Boot 3
 The Trade Imports Fish Backend is responsible for:
 
 - Managing fish import compliance data
-- Handling authentication and authorization
+- Authentication and authorization are not currently implemented in the application
 - Processing and storing import information
 - Providing REST APIs for frontend applications
 - Integration with external services

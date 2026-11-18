@@ -84,15 +84,14 @@ The pre-commit hook uses the Copilot CLI to update documentation, which requires
 
 #### Create a Personal Access Token
 
-1. Go to [github.com/settings/tokens](https://github.com/settings/tokens)
-2. Click **Generate new token** and select **Tokens (classic)**
+1. Go to [github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta) to create a fine-grained Personal Access Token
+2. Click **Generate new token**
 3. Give it a descriptive name (e.g., `copilot-docs-update`)
 4. Set the expiration (we recommend 90 days for security)
-5. Select the following scopes:
-   - `repo` (full control of private repositories)
-   - `read:user` (read user profile data)
-6. Click **Generate token**
-7. **Copy the token immediately** — you won't be able to see it again
+5. Under **Repository access**, select **Only select repositories** and choose this repository
+6. Under **Permissions**, find **Copilot Requests** and set it to **Read and write**
+7. Click **Generate token**
+8. **Copy the token immediately** — you won't be able to see it again
 
 #### Add the Token to Your Environment
 
@@ -142,8 +141,8 @@ Use whichever you prefer; set only one to avoid confusion.
 
 - **"update-docs: set COPILOT_GITHUB_TOKEN, GH_TOKEN, or GITHUB_TOKEN..."**: One of the three token environment variables is not set. Follow the setup steps above.
 - **"update-docs: copilot CLI is required..."**: The Copilot CLI is not installed. Install it from [github.com/github/gh-copilot](https://github.com/github/gh-copilot).
-- **Token expired**: Regenerate a new token at [github.com/settings/tokens](https://github.com/settings/tokens) and update your environment.
-- **Authentication fails**: Ensure the token has the `repo` and `read:user` scopes, and that your GitHub account has access to this repository.
+- **Token expired**: Regenerate a new fine-grained token at [github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta) and update your environment.
+- **Authentication fails**: Ensure the token is a **fine-grained Personal Access Token** with **Copilot Requests** permission set to **Read and write**, and that your GitHub account has access to this repository.
 
 ### What the Pre-Commit Hook Does
 

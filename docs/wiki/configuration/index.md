@@ -112,7 +112,8 @@ Configure via environment variables:
 
 ```bash
 export SERVER_PORT=8085
-export SPRING_DATA_MONGODB_URI=mongodb://localhost:27017/db
+export MONGO_URI=mongodb://localhost:27017/
+export MONGO_DATABASE=db
 export LOGGING_LEVEL_UK_GOV_DEFRA_TRADE=DEBUG
 ```
 

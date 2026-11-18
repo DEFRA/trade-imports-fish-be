@@ -22,12 +22,11 @@ The API returns standard HTTP status codes and structured error responses.
 
 ```json
 {
-  "error": {
-    "code": "INVALID_REQUEST",
-    "message": "The request is invalid",
-    "details": "Additional error details",
-    "timestamp": "2024-01-01T00:00:00Z"
-  }
+  "type": "https://api.cdp.defra.cloud/problems/validation-error",
+  "title": "Validation Error",
+  "status": 400,
+  "detail": "Validation failed for one or more fields",
+  "errors": { "name": "Name is required" }
 }
 ```
 
@@ -41,11 +40,11 @@ The API returns standard HTTP status codes and structured error responses.
 
 ```json
 {
-  "error": {
-    "code": "VALIDATION_FAILED",
-    "message": "Validation failed for request",
-    "details": "Field 'email' is required"
-  }
+  "type": "https://api.cdp.defra.cloud/problems/validation-error",
+  "title": "Validation Error",
+  "status": 400,
+  "detail": "Validation failed for one or more fields",
+  "errors": { "name": "Name is required" }
 }
 ```
 
@@ -63,11 +62,10 @@ The API returns standard HTTP status codes and structured error responses.
 
 ```json
 {
-  "error": {
-    "code": "NOT_FOUND",
-    "message": "Resource not found",
-    "details": "Import with ID '123' not found"
-  }
+  "type": "https://api.cdp.defra.cloud/problems/not-found",
+  "title": "Resource Not Found",
+  "status": 404,
+  "detail": "Example not found with id: 123"
 }
 ```
 

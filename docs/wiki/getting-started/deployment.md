@@ -14,18 +14,6 @@ For local development, refer to [Running the Application](running.md).
 docker build -t trade-imports-fish-be:0.1.0 .
 ```
 
-### Run Docker Container
-
-```bash
-docker run -d \
-  --name trade-imports-fish-be \
-  -p 8085:8085 \
-  -e MONGO_URI="mongodb://mongo:27017/" \
-  -e MONGO_DATABASE="trade-imports-fish-be" \
-  -e AWS_REGION="eu-west-2" \
-  trade-imports-fish-be:0.1.0
-```
-
 ## Docker Compose Deployment
 
 The project includes a compose configuration for complete deployment:
@@ -134,7 +122,7 @@ export LOG_LEVEL=debug
 Check metrics:
 
 ```bash
-curl http://localhost:8085/actuator/metrics
+curl http://localhost:8085/metrics
 ```
 
 ## See Also

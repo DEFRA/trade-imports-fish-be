@@ -8,9 +8,7 @@ The application uses MongoDB as its primary data store.
 
 The application manages several collections:
 
-- **imports** - Fish import records
-- **users** - User information
-- **audit_logs** - Audit trail
+- **examples** - Example records with `id`, `name`, `value`, `counter`, and `created` fields
 
 ## Querying
 
@@ -23,7 +21,7 @@ mongosh
 ### Select Database
 
 ```bash
-use trade-imports-fish
+use trade-imports-fish-be
 ```
 
 ### Query Collections
@@ -33,22 +31,22 @@ use trade-imports-fish
 db.getCollectionNames()
 
 # Find documents
-db.imports.find()
+db.examples.find()
 
 # Count documents
-db.imports.countDocuments()
+db.examples.countDocuments()
 ```
 
 ## Data Migration
 
-Data migrations are handled automatically on application startup using Spring Data MongoDB.
+Spring Data MongoDB automatically creates the declared indexes (`spring.data.mongodb.auto-index-creation: true`). No automatic data/schema migration mechanism is currently implemented; data migrations require a separate process.
 
 ## Backup and Recovery
 
 ### Backup MongoDB
 
 ```bash
-mongodump --db trade-imports-fish --out ./backup
+mongodump --db trade-imports-fish-be --out ./backup
 ```
 
 ### Restore MongoDB

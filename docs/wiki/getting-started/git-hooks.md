@@ -16,7 +16,7 @@ Before setting up Git hooks, ensure you have:
 
 - **Copilot CLI** - Install from
   [github.com/github/gh-copilot](https://github.com/github/gh-copilot)
-- **GitHub token** - Personal Access Token with `repo` and `read:user` scopes
+- **GitHub token** - Fine-grained Personal Access Token with the account-level **Copilot Requests** permission
 - **Git** - 2.9+ (supports custom hooks directory)
 
 ## Step 1: Configure Git Hooks Directory

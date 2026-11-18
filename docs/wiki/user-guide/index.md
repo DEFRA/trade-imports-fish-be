@@ -17,10 +17,10 @@ This section provides guidance on using and working with the Trade Imports Fish 
 curl http://localhost:8085/health
 ```
 
-### Access Actuator Endpoints
+### Access Actuator Metrics
 
 ```bash
-curl http://localhost:8085/actuator
+curl http://localhost:8085/metrics
 ```
 
 ### Query MongoDB

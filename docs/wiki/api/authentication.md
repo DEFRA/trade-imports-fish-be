@@ -2,7 +2,7 @@
 
 ## Overview
 
-API endpoints require authentication using Bearer tokens.
+The current application does not implement API authentication or validate Bearer tokens. The token examples below are illustrative guidance for a future authentication integration, not functionality provided by this service.
 
 ## Obtaining a Token
 
