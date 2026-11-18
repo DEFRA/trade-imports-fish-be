@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - chore/FISB-197-be-feature-branch-deployment
   workflow_dispatch:
 
 concurrency:
@@ -19,7 +20,7 @@ jobs:
   build:
     if: >-
       (github.event_name == 'push' && github.run_number != 1 && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_dispatch' && github.ref_type == 'branch' && github.ref != 'refs/heads/main')
+      (github.event_name == 'push' && github.ref == 'refs/heads/chore/FISB-197-be-feature-branch-deployment')
     name: CDP-build-workflow
     runs-on: ubuntu-latest
     permissions:
@@ -42,7 +43,7 @@ jobs:
         run: node scripts/configure-publish-settings.js
 
       - name: Set up Java
-        if: github.event_name == 'workflow_dispatch'
+        if: github.ref == 'refs/heads/chore/FISB-197-be-feature-branch-deployment'
         uses: actions/setup-java@v6
         with:
           distribution: corretto
@@ -50,7 +51,7 @@ jobs:
           cache: maven
 
       - name: Run tests
-        if: github.event_name == 'workflow_dispatch'
+        if: github.ref == 'refs/heads/chore/FISB-197-be-feature-branch-deployment'
         run: mvn -B -e clean verify
 
       - name: Build and Publish
