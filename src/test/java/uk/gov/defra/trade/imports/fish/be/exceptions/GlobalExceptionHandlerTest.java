@@ -28,7 +28,7 @@ class GlobalExceptionHandlerTest {
             new IllegalArgumentException("Internal parser details"));
         assertThat(problem.getStatus()).isEqualTo(400);
         assertThat(problem.getTitle()).isEqualTo("Validation Error");
-        assertThat(problem.getDetail()).doesNotContain("Idempotency-Key");
+        assertThat(problem.getDetail()).doesNotContain("Internal parser details");
         assertThat(problem.getProperties()).containsEntry("traceId", "invalid-request-trace");
     }
 

@@ -90,6 +90,21 @@ class NotificationServiceTest {
     }
 
     @Test
+    void replayAfterUpdateIsValidatedAgainstAndReturnsOriginalCreation() {
+        Notification updated = notification();
+        updated.setTransportMethod(TransportMethod.ROAD_VEHICLE);
+        updated.setUpdatedAt(NOW.plusSeconds(60));
+        when(repository.findById(id.toString())).thenReturn(Optional.of(updated));
+
+        var result = service.create(id, request);
+        assertThat(result.created()).isFalse();
+        assertThat(result.notification()).isEqualTo(notification());
+
+        assertThatThrownBy(() -> service.create(id, new SaveNotificationRequest("importer", TransportMethod.ROAD_VEHICLE)))
+            .isInstanceOf(ConflictException.class);
+    }
+
+    @Test
     void concurrentCreationReturnsTheWinningDraft() {
         when(repository.findById(id.toString()))
             .thenReturn(Optional.empty())
