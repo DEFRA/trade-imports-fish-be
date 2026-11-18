@@ -59,15 +59,13 @@ GitHub authentication.
 
 ### Create a Personal Access Token
 
-1. Go to [github.com/settings/tokens](https://github.com/settings/tokens)
-2. Click **Generate new token** and select **Tokens (classic)**
+1. Go to [fine-grained personal access tokens](https://github.com/settings/personal-access-tokens/new)
+2. Create a new fine-grained personal access token
 3. Give it a descriptive name (e.g., `copilot-docs-update`)
-4. Set expiration (recommended: 90 days for security)
-5. Select these scopes:
-   - `repo` - Full control of private repositories
-   - `read:user` - Read user profile data
-6. Click **Generate token**
-7. **Copy the token immediately** — you won't be able to see it again
+4. Set an appropriate expiration
+5. Under account permissions, enable **Copilot Requests**
+6. Generate the token
+7. Copy it immediately and export it using one of the environment variables below
 
 ### Add Token to Your Environment
 
