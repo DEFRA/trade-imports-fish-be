@@ -109,7 +109,7 @@ The application publishes metrics via Micrometer to CloudWatch.
 | Metric | Description |
 | -------- | ------------- |
 | `http.server.requests` | HTTP request metrics (count, timing, errors) |
-| `jvm.memory.usage` | JVM memory usage |
+| `jvm.memory.used` | JVM memory currently used |
 | `jvm.threads.peak` | Peak thread count |
 | `gc.*` | Garbage collection metrics |
 
