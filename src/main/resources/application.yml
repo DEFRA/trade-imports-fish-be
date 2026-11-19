@@ -86,6 +86,9 @@ management:
     enable:
       all: false
       controller: true
+      # Bracket notation keeps the underscores in these meter names when binding
+      "[notification_created]": true
+      "[notification_updated]": true
       jvm:
         memory:
           committed: true

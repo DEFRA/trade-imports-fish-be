@@ -79,7 +79,7 @@ public class NotificationService {
             .withReadPreference(ReadPreference.primary());
         Update update = new Update()
             .set("transportMethod", request.transportMethod())
-            .set("updatedAt", clock.instant().truncatedTo(ChronoUnit.MILLIS));
+            .currentDate("updatedAt");
 
         Notification updated = mongoTemplate.findAndModify(query, update,
             FindAndModifyOptions.options().returnNew(true), Notification.class);

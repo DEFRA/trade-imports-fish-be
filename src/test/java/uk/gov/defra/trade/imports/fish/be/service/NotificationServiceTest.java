@@ -151,9 +151,12 @@ class NotificationServiceTest {
             org.mockito.ArgumentMatchers.eq(Notification.class));
         assertThat(query.getValue().getQueryObject()).containsEntry("_id", id.toString())
             .containsEntry("organisationId", "importer").containsEntry("status", NotificationStatus.DRAFT);
+        assertThat(update.getValue().getUpdateObject())
+            .containsOnlyKeys("$set", "$currentDate");
         assertThat(update.getValue().getUpdateObject().get("$set", org.bson.Document.class))
-            .containsOnlyKeys("transportMethod", "updatedAt")
-            .containsEntry("updatedAt", NOW);
+            .containsOnlyKeys("transportMethod");
+        assertThat(update.getValue().getUpdateObject().get("$currentDate", org.bson.Document.class))
+            .containsOnlyKeys("updatedAt").containsEntry("updatedAt", true);
     }
 
     @Test

@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import com.mongodb.ConnectionString;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
@@ -42,6 +43,7 @@ class NotificationIT {
     @Autowired private MockMvc mockMvc;
     @Autowired private NotificationRepository repository;
     @Autowired private MongoTemplate mongoTemplate;
+    @Autowired private MeterRegistry meterRegistry;
 
     @DynamicPropertySource
     static void mongoProperties(DynamicPropertyRegistry registry) {
@@ -74,6 +76,8 @@ class NotificationIT {
 
     @Test
     void firstSaveReplayAndUpdatesPreserveReferenceAndOrganisation(CapturedOutput output) throws Exception {
+        double createdBefore = counterValue("notification_created");
+        double updatedBefore = counterValue("notification_updated");
         String id = UUID.randomUUID().toString();
         String traceId = UUID.randomUUID().toString();
         String response = mockMvc.perform(post("/notifications").header("Idempotency-Key", id)
@@ -96,6 +100,7 @@ class NotificationIT {
             .andExpect(status().isOk()).andExpect(jsonPath("$.reference").value(reference))
             .andExpect(jsonPath("$.createdAt").value(createdAt))
             .andExpect(jsonPath("$.updatedAt").value(createdAt));
+        Instant previousUpdatedAt = Instant.parse(createdAt);
         for (String method : new String[]{"air-freight", "road-vehicle"}) {
             String updatedResponse = mockMvc.perform(put("/notifications/{id}", id)
                     .contentType(MediaType.APPLICATION_JSON).content(body(method)))
@@ -104,9 +109,12 @@ class NotificationIT {
                 .andExpect(jsonPath("$.createdAt").value(createdAt))
                 .andReturn().getResponse().getContentAsString();
             Instant updatedAt = Instant.parse(JsonPath.read(updatedResponse, "$.updatedAt"));
-            assertThat(updatedAt).isAfterOrEqualTo(Instant.parse(createdAt));
+            assertThat(updatedAt).isAfterOrEqualTo(previousUpdatedAt);
             assertThat(repository.findById(id).orElseThrow().getUpdatedAt()).isEqualTo(updatedAt);
+            previousUpdatedAt = updatedAt;
         }
+        assertThat(counterValue("notification_created")).isEqualTo(createdBefore + 1);
+        assertThat(counterValue("notification_updated")).isEqualTo(updatedBefore + 2);
         mockMvc.perform(get("/notifications/{id}", id)).andExpect(status().isOk())
             .andExpect(jsonPath("$.transportMethod").value("road-vehicle"));
         var stored = mongoTemplate.getCollection("notifications").find(new org.bson.Document("_id", id)).first();
@@ -221,5 +229,11 @@ class NotificationIT {
 
     private String body(String method) {
         return "{\"organisationId\":\"represented-importer\",\"transportMethod\":\"" + method + "\"}";
+    }
+
+    private double counterValue(String name) {
+        var counter = meterRegistry.find(name).counter();
+        assertThat(counter).as("%s must be enabled by the metrics allowlist", name).isNotNull();
+        return counter.count();
     }
 }
