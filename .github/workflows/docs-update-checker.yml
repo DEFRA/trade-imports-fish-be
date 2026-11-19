@@ -1,0 +1,57 @@
+name: Documentation Update Checker
+
+on:
+  pull_request:
+    types:
+      - opened
+      - labeled
+      - unlabeled
+      - synchronize
+      - reopened
+    branches:
+      - main
+
+jobs:
+  check-docs-commit:
+    name: Check Documentation Updates
+    if: >-
+      !contains(github.event.pull_request.labels.*.name, 'no-docs')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin main
+
+      - name: Check for documentation changes in docs/wiki
+        run: |
+          if [ -z "$(git diff --name-only origin/main...HEAD -- docs/wiki)" ]; then
+            echo "❌ Error: No changes found in docs/wiki directory." >&2
+            echo ""
+            echo "📝 Please update the documentation to reflect your changes in this PR."
+            echo ""
+            echo "ℹ️  To bypass this check, add the 'no-docs' label to your PR if:"
+            echo "  • Your changes don't affect user-facing functionality"
+            echo "  • This is a bug fix or internal refactoring"
+            echo "  • Documentation updates are not necessary"
+            echo ""
+            echo "📚 Documentation location: docs/wiki/"
+            echo "   - Getting Started: docs/wiki/getting-started/"
+            echo "   - User Guide: docs/wiki/user-guide/"
+            echo "   - API Reference: docs/wiki/api/"
+            echo "   - Architecture: docs/wiki/architecture/"
+            echo "   - Configuration: docs/wiki/configuration/"
+            echo "   - Contributing: docs/wiki/contributing/"
+            exit 1
+          else
+            echo "✅ Documentation changes found in docs/wiki/"
+            echo ""
+            echo "The following files were updated:"
+            git diff --name-only origin/main...HEAD -- docs/wiki
+            echo ""
+            echo "Thank you for keeping the documentation up to date! 🎉"
+          fi

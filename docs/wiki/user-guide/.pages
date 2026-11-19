@@ -1,0 +1,7 @@
+nav:
+  - Overview: index.md
+  - API Usage: api-usage.md
+  - Database: database.md
+  - Authentication: authentication.md
+  - Configuration: configuration.md
+  - Troubleshooting: troubleshooting.md

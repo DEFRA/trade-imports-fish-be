@@ -1,0 +1,32 @@
+site_name: FIS Backend - Documentation
+site_url: https://defra.github.io/trade-imports-fish-be
+docs_dir: wiki
+site_dir: site
+
+theme:
+  name: material
+  palette:
+    scheme: default
+    primary: green
+    accent: green
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+plugins:
+  - search
+  - awesome-pages
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - admonition
+  - tables
+  - attr_list
+  - def_list

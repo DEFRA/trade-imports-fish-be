@@ -1,0 +1,8 @@
+nav:
+  - Home: index.md
+  - Getting Started: getting-started
+  - User Guide: user-guide
+  - API Documentation: api
+  - Architecture: architecture
+  - Configuration: configuration
+  - Contributing: contributing
