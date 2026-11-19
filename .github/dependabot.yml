@@ -1,7 +1,8 @@
 version: 2
 
 updates:
-  - package-ecosystem: nuget
+  # Update Maven dependencies
+  - package-ecosystem: maven
     directory: /
     open-pull-requests-limit: 10
 
@@ -10,8 +11,6 @@ updates:
       interval: weekly
       time: '10:30'
       timezone: 'Europe/London'
-
-    versioning-strategy: increase
 
     allow:
       - dependency-type: direct

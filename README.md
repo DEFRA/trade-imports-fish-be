@@ -88,6 +88,18 @@ Run the application:
 mvn spring-boot:run
 ```
 
+### Publishing feature branches
+
+The [Publish workflow](.github/workflows/publish.yml) publishes stable releases on pushes to `main`.
+To publish a feature branch for testing, open **Publish** in GitHub Actions, select **Run workflow**,
+choose the branch, and run it. Supported branch names follow
+`feature/FISB-1234-description`, `bugfix/FISB-1234-description`, `ci/FISB-1234-description`, or
+`chore/FISB-1234-description`, using a lowercase, hyphen-separated description.
+
+The workflow tests the backend and publishes a unique prerelease image to ECR, not Docker Hub.
+After it succeeds, select the resulting version in the CDP Portal. Stable-tag and version-bump
+safeguards prevent a prerelease from reusing a stable image tag.
+
 ### SonarCloud
 
 Example SonarCloud configuration is available in the [check-pull-request.](.github/workflows/check-pull-request.yml)
