@@ -76,8 +76,8 @@ class NotificationIT {
 
     @Test
     void firstSaveReplayAndUpdatesPreserveReferenceAndOrganisation(CapturedOutput output) throws Exception {
-        double createdBefore = counterValue("notification_created");
-        double updatedBefore = counterValue("notification_updated");
+        double createdBefore = meterRegistry.counter("notification_created").count();
+        double updatedBefore = meterRegistry.counter("notification_updated").count();
         String id = UUID.randomUUID().toString();
         String traceId = UUID.randomUUID().toString();
         String response = mockMvc.perform(post("/notifications").header("Idempotency-Key", id)
