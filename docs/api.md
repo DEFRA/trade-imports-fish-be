@@ -215,7 +215,7 @@ The service exposes actuator endpoints for health, metrics, and service informat
 }
 ```
 
-Health details are hidden by default. The local profile configures details to be shown only to authorized requests. MongoDB health check is disabled by default (`management.health.mongo.enabled: false`) to prevent blocking readiness probes.
+The default public response contains only `status`; the integration test verifies that component and detail fields are absent. The local profile changes the detail setting to `when-authorized`. MongoDB health checks are disabled by default (`management.health.mongo.enabled: false`), so the response does not confirm database connectivity.
 
 ---
 
@@ -332,4 +332,4 @@ curl http://localhost:8085/example \
   -H "x-cdp-request-id: 550e8400-e29b-41d4-a716-446655440000"
 ```
 
-Logs and error responses include this trace ID for end-to-end correlation.
+The service does not generate trace IDs. Logs and error responses include the ID only when the request supplies a nonblank value in the configured tracing header.

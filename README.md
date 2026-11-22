@@ -163,7 +163,6 @@ npm --version
 
 If not installed, see [nodejs.org](https://nodejs.org/en/download/) for installation instructions.
 
-
 #### Building Documentation
 
 Build the documentation site:
@@ -239,19 +238,27 @@ This repository includes a Git pre-commit hook that automatically updates docume
 
 #### Setup Steps
 
-1. **Make the pre-commit hook executable:**
+1. **Install the repository's local development dependencies** (requires Node.js and npm):
+
+   ```bash
+   npm ci
+   ```
+
+   This installs the pinned Prettier version used by the hook.
+
+2. **Make the pre-commit hook executable:**
 
    ```bash
    chmod +x .githooks/pre-commit
    ```
 
-2. **Configure Git to use the .githooks directory:**
+3. **Configure Git to use the .githooks directory:**
 
    ```bash
    git config core.hooksPath .githooks
    ```
 
-3. **Set the GitHub authentication token** — choose one of these environment variables:
+4. **Set the GitHub authentication token** — choose one of these environment variables:
 
    ```bash
    export COPILOT_GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
@@ -268,7 +275,7 @@ This repository includes a Git pre-commit hook that automatically updates docume
    source ~/.zshrc
    ```
 
-4. **Verify setup** — make a small change to a non-documentation file and run:
+5. **Verify setup** — make a small change to a non-documentation file and run:
 
    ```bash
    git add your-changes
@@ -288,6 +295,7 @@ git commit --no-verify -m "your commit message"
 > **⚠️ Use with caution:** Skipping the hook may result in stale documentation. Only use `--no-verify` when necessary, and ensure documentation is updated separately if needed.
 
 **When to use `--no-verify`:**
+
 - The hook is misconfigured or temporarily broken
 - You're troubleshooting issues and need to commit changes quickly
 - The documentation doesn't require updates for this specific commit

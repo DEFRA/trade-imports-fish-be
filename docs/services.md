@@ -232,7 +232,7 @@ Services use structured logging (SLF4J with ECS format):
 
 ```java
 log.info("Creating example with name: {}", entity.getName());
-// Structured output: timestamp, level, logger name, trace.id, message
+// Structured output: timestamp, level, logger name, trace.id (if supplied), message
 ```
 
 **Log Levels**:
@@ -244,10 +244,11 @@ log.info("Creating example with name: {}", entity.getName());
 
 **MDC Context** (see [Filters & Middleware](filters.md)):
 
-- `trace.id` — Request trace ID for correlation
+- `trace.id` — Nonblank trace ID supplied in the configured request header
 - `http.request.method` — HTTP method (GET, POST, etc.)
-- `http.response.status_code` — Response status
-- `url.full` — Full request URL
+- `url.full` — Request URL without the query string
+
+The filter records the response status only after the request chain completes and clears the MDC without logging it. Controller and service log events therefore do not include the final response status.
 
 ---
 
