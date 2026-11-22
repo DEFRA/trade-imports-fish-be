@@ -30,7 +30,7 @@ For each HTTP request:
 
 2. **Populate Request Metadata**
    - `http.request.method` — HTTP method (GET, POST, PUT, DELETE, etc.)
-   - `url.full` — Full request URL including query string
+   - `url.full` — Request URL without the query string
 
 3. **Execute Filter Chain**
    - Continue to next filter or controller
@@ -47,7 +47,7 @@ For each HTTP request:
 | --------------------------- | ---------------------------- | ---------------------------------------- |
 | `trace.id`                  | Request trace ID from header | `550e8400-e29b-41d4-a716-446655440000`   |
 | `http.request.method`       | HTTP verb                    | `POST`                                   |
-| `url.full`                  | Full request URL             | `http://localhost:8085/example?limit=10` |
+| `url.full`                  | Request URL without query string | `http://localhost:8085/example` |
 | `http.response.status_code` | Response HTTP status         | `201`                                    |
 
 ### Configuration
