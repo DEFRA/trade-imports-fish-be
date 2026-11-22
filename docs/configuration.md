@@ -105,7 +105,7 @@ Configured in [`logback-spring.xml`](https://github.com/DEFRA/trade-imports-fish
 | `management.endpoints.web.exposure.include` | —                    | `health,metrics,info,cache` | Exposed endpoints                                     |
 | `management.endpoint.health.show-details`   | —                    | `never`                     | Health details visibility                             |
 | `management.health.mongo.enabled`           | —                    | `false`                     | Disable MongoDB health check (non-blocking readiness) |
-| `management.metrics.enabled`                | `METRICS_ENABLED`    | `true`                      | Enable metrics collection and the EMF publisher bean  |
+| `management.metrics.enabled`                | `METRICS_ENABLED`    | `true`                      | Enable the EMF publisher bean; collection uses `management.metrics.enable.*` |
 
 **Exposed Endpoints**:
 
