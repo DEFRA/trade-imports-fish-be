@@ -197,10 +197,10 @@ No `SPRING_PROFILES_ACTIVE` (uses production defaults).
 Spring validates configuration on startup:
 
 ```bash
-# Validate syntax without starting
+# Compile Java sources (does not validate runtime configuration)
 mvn clean compile
 
-# Start with strict validation
+# Start the application to load YAML and bind configuration values
 mvn spring-boot:run
 ```
 
