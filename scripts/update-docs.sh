@@ -10,7 +10,7 @@ NON_DOC_CHANGES=$(git diff --cached --name-only --diff-filter=ACMRD -- . \
   ':(exclude).githooks/**' \
   ':(exclude)scripts/update-docs.sh' \
   ':(exclude)package-lock.json' \
-  ':(exclude).github/skills/create-update-mkdocs/**' || true)
+  ':(exclude).github/skills/create-update-mkdocs-backend/**' || true)
 if [ -z "$NON_DOC_CHANGES" ]; then
   echo "update-docs: no staged non-documentation changes, skipping"
   exit 0

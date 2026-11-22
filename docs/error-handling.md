@@ -8,7 +8,7 @@ The service uses a custom exception hierarchy for domain-specific errors:
 RuntimeException
 ├── ConflictException (409)
 ├── NotFoundException (404)
-└── [Framework exceptions handled by GlobalExceptionHandler]
+└── [Other runtime exceptions handled by GlobalExceptionHandler]
 ```
 
 ## Custom Exceptions
@@ -73,7 +73,7 @@ throw new NotFoundException("Example not found with id: 507f1f77bcf86cd799439011
 
 ## Global Exception Handler
 
-The [`GlobalExceptionHandler`](https://github.com/DEFRA/trade-imports-fish-be/blob/main/src/main/java/uk/gov/defra/trade/imports/fish/be/exceptions/GlobalExceptionHandler.java) is a Spring `@RestControllerAdvice` that handles exceptions globally and returns RFC 7807 ProblemDetail responses.
+The [`GlobalExceptionHandler`](https://github.com/DEFRA/trade-imports-fish-be/blob/main/src/main/java/uk/gov/defra/trade/imports/fish/be/exceptions/GlobalExceptionHandler.java) is a Spring `@RestControllerAdvice` that returns RFC 7807 ProblemDetail responses for the exceptions it handles. Framework-generated errors such as a missing route can use a different format.
 
 ### Handled Exceptions
 
@@ -164,27 +164,27 @@ Triggered by unexpected runtime exceptions:
 
 **Security Note**: Error detail does not expose sensitive information. Full exception and stack trace logged server-side with trace ID.
 
-### Framework Exceptions
+### Other Framework Exceptions
 
-The exception handler does NOT catch Spring framework exceptions:
+The exception handler does not catch every Spring framework exception:
 
 - `NoResourceFoundException` — handled by Spring as 404
-- `HttpMessageNotReadableException` — handled by Spring as 400
+- `HttpMessageNotReadableException` — caught by the `RuntimeException` handler and returned as 500
 - Other servlet container exceptions
 
-This allows Spring's built-in error handling to work for framework-level errors, while custom exceptions are handled by our `@RestControllerAdvice`.
+Other framework errors may use Spring's built-in error handling, while malformed JSON is caught by the runtime exception handler.
 
 ## Trace ID Correlation
 
-All error responses include `traceId` for log correlation.
+Custom error responses include `traceId` only when a non-blank trace ID was supplied in the request header; otherwise the property is omitted.
 
 **Flow**:
 
-1. Request arrives with `x-cdp-request-id` header (or empty)
-2. `RequestTracingFilter` populates MDC with trace ID
+1. Request arrives with a non-blank `x-cdp-request-id` header
+2. `RequestTracingFilter` populates MDC with the trace ID; if the header is missing or blank, it remains unset
 3. Exception occurs; `GlobalExceptionHandler` retrieves trace ID from MDC
-4. Trace ID included in ProblemDetail response
-5. Logs include trace ID in ECS format
+4. Trace ID is included in the ProblemDetail response only when set
+5. Logs include the trace ID in ECS format when supplied
 6. Client uses trace ID to find request in logs
 
 **Example workflow**:
@@ -202,9 +202,9 @@ curl http://localhost:8085/example/invalid-id \
 
 # Server logs (ECS format)
 # {
-#   "timestamp": "2024-11-21T13:16:51Z",
-#   "level": "WARN",
-#   "logger": "GlobalExceptionHandler",
+#   "@timestamp": "2024-11-21T13:16:51Z",
+#   "log.level": "WARN",
+#   "log.logger": "uk.gov.defra.trade.imports.fish.be.exceptions.GlobalExceptionHandler",
 #   "trace.id": "550e8400-e29b-41d4-a716-446655440000",
 #   "message": "Resource not found..."
 # }
@@ -254,10 +254,10 @@ This converts MongoDB's exception to our domain exception (409 Conflict).
 | `200` | OK                    | Successful GET/PUT                |
 | `201` | Created               | Successful POST                   |
 | `204` | No Content            | Successful DELETE                 |
-| `400` | Bad Request           | Validation failed, malformed JSON |
+| `400` | Bad Request           | Validation failed                 |
 | `404` | Not Found             | Resource doesn't exist            |
 | `409` | Conflict              | Name already exists               |
-| `500` | Internal Server Error | Unexpected exception              |
+| `500` | Internal Server Error | Unexpected exception, including malformed JSON |
 
 ## Troubleshooting
 

@@ -43,9 +43,9 @@ trade-imports-fish-be/
 │   │   ├── GlobalExceptionHandler.java  # @RestControllerAdvice
 │   │   ├── ConflictException.java       # 409 Conflict
 │   │   └── NotFoundException.java       # 404 Not Found
-│   ├── filter/                          # Servlet filters
+│   ├── filter/                          # Request and logging filters
 │   │   ├── RequestTracingFilter.java    # MDC & trace ID population
-│   │   └── HealthCheckFilter.java       # Health check endpoint bypass
+│   │   └── HealthCheckFilter.java       # Suppresses health-request log events
 │   └── interceptor/
 │       └── TraceIdPropagationInterceptor.java  # Outbound trace ID propagation
 ├── src/main/resources/
@@ -103,10 +103,10 @@ Access Floci (AWS): `http://localhost:4566`
 
 #### Option 2: Infrastructure Only (with local Java execution)
 
-Start just the infrastructure services:
+Start only the infrastructure services so the application can run locally without a port conflict:
 
 ```bash
-docker compose --profile infra up -d
+docker compose up -d mongodb floci
 ```
 
 Then run the application from your IDE or command line:
@@ -150,7 +150,7 @@ Key configuration via environment variables (see [Configuration](configuration.m
 | `LOG_LEVEL`              | `info`                      | Root logging level                |
 | `AWS_REGION`             | `eu-west-2`                 | AWS region                        |
 | `AWS_ENDPOINT_URL`       | (empty)                     | AWS endpoint override (for Floci) |
-| `AWS_EMF_ENABLED`        | `true`                      | Enable CloudWatch EMF metrics     |
+| `METRICS_ENABLED`        | `true`                      | Enable the CloudWatch EMF publisher |
 | `SPRING_PROFILES_ACTIVE` | (empty)                     | Active profiles (e.g., `local`)   |
 
 ## Application Lifecycle
@@ -201,7 +201,8 @@ public class Example {
 
 ### TLS/SSL
 
-- MongoDB connections use SSL by default (`spring.data.mongodb.ssl.enabled: true`)
+- Enable TLS in the MongoDB connection URI (for example, with `tls=true`); the default URI does not enable TLS.
+- `spring.data.mongodb.ssl.enabled` configures the SSL context but does not enable TLS on its own.
 - Custom certificate loading via `TrustStoreConfiguration` (for CDP environments)
 - Proxy configuration supported for outbound HTTPS requests
 

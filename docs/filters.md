@@ -1,8 +1,8 @@
 # Filters & Middleware
 
-## Servlet Filters Overview
+## Request and Logging Filters
 
-Servlet filters intercept HTTP requests/responses before they reach controllers. The service implements two filters for cross-cutting concerns: request tracing and health check bypass.
+Servlet filters intercept HTTP requests/responses before they reach controllers. The service uses a servlet filter for request tracing and a Logback event filter to suppress health-request logs.
 
 ## RequestTracingFilter
 
@@ -26,7 +26,7 @@ For each HTTP request:
 1. **Extract Trace ID**
    - Read `x-cdp-request-id` header (configurable via `cdp.tracing.header-name`)
    - If header present and non-empty, store in MDC as `trace.id`
-   - If header missing or empty, trace ID remains empty (exception handlers can still use it)
+   - If the header is missing or blank, the trace ID remains unset
 
 2. **Populate Request Metadata**
    - `http.request.method` — HTTP method (GET, POST, PUT, DELETE, etc.)
@@ -70,9 +70,9 @@ MDC values are automatically included in log output (ECS format):
 log.info("Creating example");
 // Output (ECS format):
 // {
-//   "timestamp": "2024-11-21T13:16:51Z",
-//   "level": "INFO",
-//   "logger": "ExampleService",
+//   "@timestamp": "2024-11-21T13:16:51Z",
+//   "log.level": "INFO",
+//   "log.logger": "uk.gov.defra.trade.imports.fish.be.service.ExampleService",
 //   "trace.id": "550e8400-e29b-41d4-a716-446655440000",
 //   "http.request.method": "POST",
 //   "url.full": "http://localhost:8085/example",
@@ -84,7 +84,9 @@ Exception handlers access trace ID:
 
 ```java
 String traceId = MDC.get("trace.id");
-problemDetail.setProperty("traceId", traceId);
+if (traceId != null) {
+    problemDetail.setProperty("traceId", traceId);
+}
 ```
 
 ### Example Request/Response
@@ -105,49 +107,32 @@ url.full=http://localhost:8085/example
 http.response.status_code=200
 ```
 
-**Response includes trace ID** (via GlobalExceptionHandler for errors, or directly in logs for all requests).
+When the request includes a trace ID, the error response may include it and logs include it for correlation.
 
 ---
 
 ## HealthCheckFilter
 
-**Purpose**: Bypass subsequent filters for health check endpoint to reduce overhead and prevent circular dependencies.
+**Purpose**: Suppress console log events for health requests to reduce log noise. This is a Logback event filter, not a servlet filter; health requests still pass through the normal HTTP filter chain and reach the controller.
 
 **Location**: [`src/main/java/uk/gov/defra/trade/imports/fish/be/filter/HealthCheckFilter.java`](https://github.com/DEFRA/trade-imports-fish-be/blob/main/src/main/java/uk/gov/defra/trade/imports/fish/be/filter/HealthCheckFilter.java)
 
 ### Behavior
 
-1. Check if request path is health check endpoint (e.g., `/health`)
-2. If yes, skip remaining filters and pass directly to controller
-3. If no, continue normal filter chain
-
-### Configuration
-
-```java
-private static final String HEALTH_CHECK_PATH = "/health";
-
-if (httpRequest.getRequestURI().equals(HEALTH_CHECK_PATH)) {
-    chain.doFilter(request, response);
-    return;
-}
-```
+For each logging event, it checks the MDC `url.full` value. Events whose URL contains `/health` are denied; other events are allowed to continue through the logging pipeline.
 
 ### Benefits
 
-- Reduces latency for health check probes (Kubernetes readiness/liveness probes)
-- Avoids unnecessary MDC operations for routine health checks
-- Prevents potential circular dependencies if health check logic queries MDC
+- Reduces console log noise from routine health check probes
 
 ---
 
 ## Filter Chain Order
 
-Filters execute in `@Order` sequence (lower precedence first):
+Servlet filters execute in `@Order` sequence (lower precedence first):
 
 ```
 RequestTracingFilter (HIGHEST_PRECEDENCE = -2147483648)
-  ↓
-HealthCheckFilter (default order)
   ↓
 Other Spring Filters
   ↓
@@ -156,8 +141,8 @@ Controller
 
 **Result**:
 
-- MDC populated for all requests (including health checks)
-- Health checks bypass remaining filters for performance
+- Requests, including health checks, pass through the servlet filter chain
+- `HealthCheckFilter` only suppresses matching log events; it does not bypass HTTP filters or controller processing
 
 ---
 
@@ -172,7 +157,8 @@ Controller
    @Order(Ordered.HIGHEST_PRECEDENCE + 1)  // Run after RequestTracingFilter
    public class CustomFilter implements Filter {
        @Override
-       public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) {
+       public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+           throws IOException, ServletException {
            // Pre-processing
            chain.doFilter(req, res);
            // Post-processing
@@ -212,8 +198,8 @@ if (path.startsWith("/internal/") || "OPTIONS".equals(method)) {
 
 **Health Checks Slow**:
 
-- Verify `HealthCheckFilter` is bypassing other filters
-- Check for heavy operations in `GlobalExceptionHandler` or other advice
+- `HealthCheckFilter` only suppresses health-request log events; it does not bypass request processing
+- Check for heavy operations in health endpoint processing or other advice
 
 **MDC Leakage (Data in Wrong Request)**:
 
@@ -227,22 +213,19 @@ if (path.startsWith("/internal/") || "OPTIONS".equals(method)) {
 The ECS logback configuration automatically outputs MDC fields:
 
 ```xml
-<!-- logback-spring.xml -->
-<pattern>
-  {
-    "timestamp": "%d{ISO_8601}",
-    "level": "%p",
-    "logger": "%c",
-    "trace.id": "%X{trace.id}",
-    "http.request.method": "%X{http.request.method}",
-    "url.full": "%X{url.full}",
-    "http.response.status_code": "%X{http.response.status_code}",
-    "message": "%m"
-  }
-</pattern>
+<springProperty name="service.version" source="cdp.service-version"/>
+<springProperty name="service.name" source="spring.application.name"/>
+
+<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+  <filter class="uk.gov.defra.trade.imports.fish.be.filter.HealthCheckFilter"/>
+  <encoder class="co.elastic.logging.logback.EcsEncoder">
+    <serviceVersion>${service.version}</serviceVersion>
+    <serviceName>${service.name}</serviceName>
+  </encoder>
+</appender>
 ```
 
-The `%X{key}` syntax outputs MDC values. Missing keys render as empty.
+The ECS encoder writes standard fields such as `@timestamp`, `log.level`, and `log.logger`, and automatically includes MDC fields.
 
 ---
 

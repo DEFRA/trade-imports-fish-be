@@ -36,7 +36,7 @@ The main configuration is in [`application.yml`](https://github.com/DEFRA/trade-
 | `spring.data.mongodb.connection-pool.max-size`                    | `MONGO_POOL_MAX_SIZE`         | `100`                        | Maximum pool connections                        |
 | `spring.data.mongodb.connection-pool.max-wait-time-ms`            | `MONGO_POOL_MAX_WAIT_TIME_MS` | `2000`                       | Max wait for available connection (ms)          |
 | `spring.data.mongodb.connection-pool.max-connection-idle-time-ms` | `MONGO_POOL_MAX_IDLE_TIME_MS` | `60000`                      | Max idle time before closing (ms)               |
-| `spring.data.mongodb.ssl.enabled`                                 | —                             | `true`                       | Enable SSL/TLS for MongoDB                      |
+| `spring.data.mongodb.ssl.enabled`                                 | —                             | `true`                       | Configure the SSL context; TLS must also be enabled in `MONGO_URI` (for example, `tls=true`) |
 
 **Connection URI Format**:
 
@@ -72,7 +72,7 @@ mongodb://user:password@mongo.example.com:27017/?ssl=true&authSource=admin
 | Property               | Environment Variable   | Default                 | Purpose                                       |
 | ---------------------- | ---------------------- | ----------------------- | --------------------------------------------- |
 | `aws.region`           | `AWS_REGION`           | `eu-west-2`             | AWS region for STS, CloudWatch                |
-| `aws.emf.enabled`      | `AWS_EMF_ENABLED`      | `true`                  | Enable CloudWatch EMF metrics                 |
+| `aws.emf.enabled`      | `AWS_EMF_ENABLED`      | `true`                  | Unused; does not control EMF publishing       |
 | `aws.emf.environment`  | `AWS_EMF_ENVIRONMENT`  | `Local`                 | Environment for EMF (Local, Test, Production) |
 | `aws.emf.namespace`    | `AWS_EMF_NAMESPACE`    | `trade-imports-fish-be` | CloudWatch namespace                          |
 | `aws.emf.service.name` | `AWS_EMF_SERVICE_NAME` | `trade-imports-fish-be` | Service name for metrics                      |
@@ -105,7 +105,7 @@ Configured in [`logback-spring.xml`](https://github.com/DEFRA/trade-imports-fish
 | `management.endpoints.web.exposure.include` | —                    | `health,metrics,info,cache` | Exposed endpoints                                     |
 | `management.endpoint.health.show-details`   | —                    | `never`                     | Health details visibility                             |
 | `management.health.mongo.enabled`           | —                    | `false`                     | Disable MongoDB health check (non-blocking readiness) |
-| `management.metrics.enabled`                | `METRICS_ENABLED`    | `true`                      | Enable metrics collection                             |
+| `management.metrics.enabled`                | `METRICS_ENABLED`    | `true`                      | Enable metrics collection and the EMF publisher bean |
 
 **Exposed Endpoints**:
 
@@ -113,7 +113,6 @@ Configured in [`logback-spring.xml`](https://github.com/DEFRA/trade-imports-fish
 - `GET /metrics` — Available metrics
 - `GET /metrics/{metric}` — Specific metric value
 - `GET /info` — Service info (name, version, environment)
-- `GET /cache` — Cache statistics
 
 ### Application Info
 
@@ -249,7 +248,7 @@ For production deployments, use:
 
 **Metrics Not Appearing**:
 
-- Verify `AWS_EMF_ENABLED=true`
+- Verify `METRICS_ENABLED=true` to enable the EMF publisher bean. `AWS_EMF_ENABLED` is unused and does not disable publishing.
 - Check CloudWatch endpoint accessibility: `AWS_EMF_AGENT_ENDPOINT`
 - For local: Floci should be running at `http://localhost:4566`
 

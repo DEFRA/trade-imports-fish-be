@@ -8,9 +8,9 @@ The service exposes a REST API for CRUD operations on Example entities. All endp
 
 **Authentication**: None (scope: example CRUD only)
 
-**Content-Type**: `application/json` (all requests and responses)
+**Content-Type**: Requests and successful responses with a body use `application/json`. Errors handled by the service's exception advice use `application/problem+json`; `DELETE` success responses have no body.
 
-**Documentation**: OpenAPI 3.0 Swagger available at `/swagger-ui.html` or `/api-docs`
+**Documentation**: OpenAPI 3.0 Swagger available at `/swagger-ui.html` or `/v3/api-docs`
 
 ## Endpoints
 
@@ -206,22 +206,16 @@ The service exposes actuator endpoints for health, metrics, and service informat
 | `GET /metrics`          | Available metrics list          | Public                      |
 | `GET /metrics/{metric}` | Specific metric value           | Public                      |
 | `GET /info`             | Service version & environment   | Public                      |
-| `GET /cache`            | Cache statistics                | Public (if caching enabled) |
 
-**Health Response** (200 OK):
+**Health Response** (200 OK; public response):
 
 ```json
 {
-  "status": "UP",
-  "components": {
-    "diskSpace": { "status": "UP" },
-    "livenessState": { "status": "UP" },
-    "readinessState": { "status": "UP" }
-  }
+  "status": "UP"
 }
 ```
 
-MongoDB health check is disabled by default (`management.health.mongo.enabled: false`) to prevent blocking readiness probes.
+Health details are hidden by default. The local profile configures details to be shown only to authorized requests. MongoDB health check is disabled by default (`management.health.mongo.enabled: false`) to prevent blocking readiness probes.
 
 ---
 
@@ -303,7 +297,7 @@ The API uses standard HTTP status codes:
 
 ## Error Response Format
 
-All errors use RFC 7807 ProblemDetail format:
+Exceptions handled by `GlobalExceptionHandler` (validation, domain errors, and caught runtime exceptions) use RFC 7807 ProblemDetail format. Framework-generated errors, such as a missing route, may use a different response format:
 
 ```json
 {
@@ -319,7 +313,7 @@ All errors use RFC 7807 ProblemDetail format:
 }
 ```
 
-**trace ID** helps correlate logs across the system (see [Error Handling](error-handling.md)).
+When present, **trace ID** helps correlate logs across the system (see [Error Handling](error-handling.md)).
 
 ---
 

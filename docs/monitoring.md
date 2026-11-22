@@ -14,9 +14,9 @@ Logs are output in ECS JSON format for integration with centralized logging syst
 
 ```json
 {
-  "timestamp": "2024-11-21T13:16:51.123Z",
-  "level": "INFO",
-  "logger": "uk.gov.defra.trade.imports.fish.be.service.ExampleService",
+  "@timestamp": "2024-11-21T13:16:51.123Z",
+  "log.level": "INFO",
+  "log.logger": "uk.gov.defra.trade.imports.fish.be.service.ExampleService",
   "trace.id": "550e8400-e29b-41d4-a716-446655440000",
   "http.request.method": "POST",
   "url.full": "http://localhost:8085/example",
@@ -81,14 +81,13 @@ trace.id: "550e8400-e29b-41d4-a716-446655440000"
 
 ### Collection & Export
 
-Metrics are collected via Micrometer and exported to CloudWatch using EMF (Embedded Metric Format).
+Metrics are collected via Micrometer and exported to CloudWatch using EMF (Embedded Metric Format). The publisher bean is enabled by `management.metrics.enabled` (`METRICS_ENABLED`); the `aws.emf.*` properties configure EMF metadata.
 
 **Configuration**:
 
 ```yaml
 aws:
   emf:
-    enabled: ${AWS_EMF_ENABLED:true}
     environment: ${AWS_EMF_ENVIRONMENT:Local}
     namespace: ${AWS_EMF_NAMESPACE:trade-imports-fish-be}
     service:
@@ -190,12 +189,7 @@ Indicates whether the application is running and responsive.
 
 ```json
 {
-  "status": "UP",
-  "components": {
-    "diskSpace": { "status": "UP" },
-    "livenessState": { "status": "UP" },
-    "readinessState": { "status": "UP" }
-  }
+  "status": "UP"
 }
 ```
 
@@ -203,15 +197,11 @@ Indicates whether the application is running and responsive.
 
 ```json
 {
-  "status": "DOWN",
-  "components": {
-    "diskSpace": {
-      "status": "DOWN",
-      "details": { "status": 1, "threshold": 1048576 }
-    }
-  }
+  "status": "DOWN"
 }
 ```
+
+Component details are hidden by default and are available only when configured and authorized.
 
 **Kubernetes usage**:
 
@@ -324,9 +314,9 @@ curl -H "x-cdp-request-id: abc123" http://localhost:8085/example
 Logs include:
 
 ```json
-{"timestamp": "2024-11-21T13:16:51Z", "trace.id": "abc123", "message": "GET /example"}
-{"timestamp": "2024-11-21T13:16:51Z", "trace.id": "abc123", "message": "Found 5 examples"}
-{"timestamp": "2024-11-21T13:16:51Z", "trace.id": "abc123", "message": "Response 200"}
+{"@timestamp": "2024-11-21T13:16:51Z", "trace.id": "abc123", "message": "GET /example"}
+{"@timestamp": "2024-11-21T13:16:51Z", "trace.id": "abc123", "message": "Found 5 examples"}
+{"@timestamp": "2024-11-21T13:16:51Z", "trace.id": "abc123", "message": "Response 200"}
 ```
 
 ---
@@ -335,10 +325,10 @@ Logs include:
 
 ### Setup
 
-1. Enable EMF in production:
+1. Enable metrics publishing in production:
 
    ```bash
-   AWS_EMF_ENABLED=true
+   METRICS_ENABLED=true
    AWS_EMF_AGENT_ENDPOINT=http://cloudwatch-agent:3000
    ```
 
@@ -402,7 +392,7 @@ aws cloudwatch put-metric-alarm \
 
 **Missing metrics in CloudWatch**:
 
-- Verify `AWS_EMF_ENABLED=true`
+- Verify `METRICS_ENABLED=true` to enable the EMF publisher bean
 - Check AWS credentials and permissions
 - Confirm `AWS_REGION` matches CloudWatch region
 - For local dev: Floci running at `AWS_EMF_AGENT_ENDPOINT`

@@ -1,4 +1,9 @@
 #!/bin/sh
 
 sh scripts/update-docs.sh || exit $?
-mvn test 
+
+DOCS_BUILD_DIR=$(mktemp -d) || exit $?
+trap 'rm -rf "$DOCS_BUILD_DIR"' EXIT HUP INT TERM
+mkdocs build --strict --site-dir "$DOCS_BUILD_DIR" || exit $?
+
+mvn test

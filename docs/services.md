@@ -208,13 +208,13 @@ public interface ExampleRepository extends MongoRepository<Example, String> {
 
 ## Metrics
 
-The service publishes custom metrics via Micrometer:
+The service instruments custom counters via Micrometer:
 
 | Metric                                   | Type    | Description                        |
 | ---------------------------------------- | ------- | ---------------------------------- |
-| `example_created`                        | Counter | Incremented on successful creation |
-| `example_updated`                        | Counter | Incremented on successful update   |
-| `example_deleted`                        | Counter | Incremented on successful deletion |
+| `example_created`                        | Counter | Incremented on successful creation; not published by default |
+| `example_updated`                        | Counter | Incremented on successful update; not published by default   |
+| `example_deleted`                        | Counter | Incremented on successful deletion; not published by default |
 | `controller.getAllExampleEntities.count` | Counter | Incremented on each list request   |
 | `controller.postExampleEntity.time`      | Timer   | Time spent in create endpoint      |
 | `controller.getExampleEntity.time`       | Timer   | Time spent in get-by-id endpoint   |
@@ -283,7 +283,7 @@ GET /example/507f1f77bcf86cd799439011
 ← 404 Not Found: { "type": "not-found", "title": "Resource Not Found" }
 ```
 
-**Metrics output** (CloudWatch):
+**Illustrative metrics output** (CloudWatch; requires explicitly enabling each `example_*` counter in the metrics allowlist):
 
 ```
 example_created: 1

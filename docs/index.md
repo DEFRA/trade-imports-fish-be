@@ -13,5 +13,5 @@ The Trade Imports Fish Backend is a Spring Boot 3.5 REST API service built with 
 - [Core Services](services.md) — Business logic, example service, data persistence layer
 - [Configuration](configuration.md) — Environment variables, MongoDB setup, AWS configuration, logging, actuator endpoints
 - [Error Handling](error-handling.md) — Exception handling strategy, HTTP status codes, ProblemDetail responses, trace ID correlation
-- [Filters & Middleware](filters.md) — Request tracing, health check bypass, MDC population for structured logging
+- [Filters & Middleware](filters.md) — Request tracing, health-request log suppression, MDC population for structured logging
 - [Monitoring & Observability](monitoring.md) — CloudWatch metrics, structured logging, health checks, Micrometer integration

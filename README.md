@@ -36,10 +36,10 @@ in [github.com/DEFRA/cdp-local-environment](https://github.com/DEFRA/cdp-local-e
 
 #### MongoDB via Docker
 
-Run infrastructure services (MongoDB, Floci, Redis):
+Run infrastructure services (MongoDB and Floci):
 
 ```bash
-docker compose --profile infra up -d
+docker compose up -d mongodb floci
 ```
 
 #### MongoDB locally
@@ -218,7 +218,7 @@ This repository includes a Git pre-commit hook that automatically updates docume
    If not installed, install it:
 
    ```bash
-   npm install -g @github/copilot-cli
+   npm install -g @github/copilot
    ```
 
    Then verify installation:
