@@ -61,7 +61,7 @@ mongodb://user:password@mongo.example.com:27017/?ssl=true&authSource=admin
 | Property                  | Environment Variable     | Default                 | Purpose                               |
 | ------------------------- | ------------------------ | ----------------------- | ------------------------------------- |
 | `cdp.certificate`         | `TRUSTSTORE_CDP_ROOT_CA` | (empty)                 | Root CA certificate (PEM encoded)     |
-| `cdp.metrics.enabled`     | —                        | `true`                  | Enable metrics collection             |
+| `cdp.metrics.enabled`     | —                        | `true`                  | Unused; does not control metrics collection or EMF publishing |
 | `cdp.service-version`     | `SERVICE_VERSION`        | `0.0.0-local`           | Service version (exposed via `/info`) |
 | `cdp.tracing.header-name` | `TRACING_HEADER`         | `x-cdp-request-id`      | Request trace ID header name          |
 | `cdp.cloudwatch.endpoint` | `AWS_EMF_AGENT_ENDPOINT` | `http://localhost:4566` | CloudWatch EMF agent endpoint         |
