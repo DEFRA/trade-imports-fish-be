@@ -14,7 +14,7 @@ The main configuration is in [`application.yml`](https://github.com/DEFRA/trade-
 | -------------------------------------- | -------------------- | ---------- | ------------------------- |
 | `server.port`                          | `PORT`               | `8085`     | Listening port            |
 | `server.shutdown`                      | —                    | `graceful` | Shutdown behavior         |
-| `lifecycle.timeout-per-shutdown-phase` | —                    | `30s`      | Graceful shutdown timeout |
+| `spring.lifecycle.timeout-per-shutdown-phase` | —                    | `30s`      | Graceful shutdown timeout |
 
 ### Spring Application
 
