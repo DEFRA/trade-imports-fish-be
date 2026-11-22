@@ -200,12 +200,12 @@ DELETE /example/507f1f77bcf86cd799439011
 
 The service exposes actuator endpoints for health, metrics, and service information.
 
-| Endpoint                | Purpose                         | Access                      |
-| ----------------------- | ------------------------------- | --------------------------- |
-| `GET /health`           | Service health (liveness probe) | Public                      |
-| `GET /metrics`          | Available metrics list          | Public                      |
-| `GET /metrics/{metric}` | Specific metric value           | Public                      |
-| `GET /info`             | Service version & environment   | Public                      |
+| Endpoint                | Purpose                         | Access |
+| ----------------------- | ------------------------------- | ------ |
+| `GET /health`           | Service health (liveness probe) | Public |
+| `GET /metrics`          | Available metrics list          | Public |
+| `GET /metrics/{metric}` | Specific metric value           | Public |
+| `GET /info`             | Service version & environment   | Public |
 
 **Health Response** (200 OK; public response):
 

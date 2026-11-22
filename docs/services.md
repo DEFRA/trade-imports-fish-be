@@ -210,17 +210,17 @@ public interface ExampleRepository extends MongoRepository<Example, String> {
 
 The service instruments custom counters via Micrometer:
 
-| Metric                                   | Type    | Description                        |
-| ---------------------------------------- | ------- | ---------------------------------- |
+| Metric                                   | Type    | Description                                                  |
+| ---------------------------------------- | ------- | ------------------------------------------------------------ |
 | `example_created`                        | Counter | Incremented on successful creation; not published by default |
 | `example_updated`                        | Counter | Incremented on successful update; not published by default   |
 | `example_deleted`                        | Counter | Incremented on successful deletion; not published by default |
-| `controller.getAllExampleEntities.count` | Counter | Incremented on each list request   |
-| `controller.postExampleEntity.time`      | Timer   | Time spent in create endpoint      |
-| `controller.getExampleEntity.time`       | Timer   | Time spent in get-by-id endpoint   |
-| `controller.getAllExampleEntities.time`  | Timer   | Time spent in list endpoint        |
-| `controller.putExampleEntity.time`       | Timer   | Time spent in update endpoint      |
-| `controller.deleteExampleEntity.time`    | Timer   | Time spent in delete endpoint      |
+| `controller.getAllExampleEntities.count` | Counter | Incremented on each list request                             |
+| `controller.postExampleEntity.time`      | Timer   | Time spent in create endpoint                                |
+| `controller.getExampleEntity.time`       | Timer   | Time spent in get-by-id endpoint                             |
+| `controller.getAllExampleEntities.time`  | Timer   | Time spent in list endpoint                                  |
+| `controller.putExampleEntity.time`       | Timer   | Time spent in update endpoint                                |
+| `controller.deleteExampleEntity.time`    | Timer   | Time spent in delete endpoint                                |
 
 Metrics are published to CloudWatch via EMF (see [Monitoring & Observability](monitoring.md)).
 

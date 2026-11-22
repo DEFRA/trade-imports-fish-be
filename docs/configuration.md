@@ -25,17 +25,17 @@ The main configuration is in [`application.yml`](https://github.com/DEFRA/trade-
 
 ### MongoDB
 
-| Property                                                          | Environment Variable          | Default                      | Purpose                                         |
-| ----------------------------------------------------------------- | ----------------------------- | ---------------------------- | ----------------------------------------------- |
-| `spring.data.mongodb.uri`                                         | `MONGO_URI`                   | `mongodb://localhost:27017/` | MongoDB connection URI                          |
-| `spring.data.mongodb.database`                                    | `MONGO_DATABASE`              | `trade-imports-fish-be`      | Database name                                   |
-| `spring.data.mongodb.auto-index-creation`                         | —                             | `true`                       | Auto-create indexes from `@Indexed` annotations |
-| `spring.data.mongodb.read-preference`                             | `MONGO_READ_PREFERENCE`       | `secondary`                  | Read preference (secondary, primary, etc.)      |
-| `spring.data.mongodb.write-concern`                               | `MONGO_WRITE_CONCERN`         | `majority`                   | Write acknowledgment level                      |
-| `spring.data.mongodb.connection-pool.min-size`                    | `MONGO_POOL_MIN_SIZE`         | `10`                         | Minimum pool connections                        |
-| `spring.data.mongodb.connection-pool.max-size`                    | `MONGO_POOL_MAX_SIZE`         | `100`                        | Maximum pool connections                        |
-| `spring.data.mongodb.connection-pool.max-wait-time-ms`            | `MONGO_POOL_MAX_WAIT_TIME_MS` | `2000`                       | Max wait for available connection (ms)          |
-| `spring.data.mongodb.connection-pool.max-connection-idle-time-ms` | `MONGO_POOL_MAX_IDLE_TIME_MS` | `60000`                      | Max idle time before closing (ms)               |
+| Property                                                          | Environment Variable          | Default                      | Purpose                                                                                      |
+| ----------------------------------------------------------------- | ----------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------- |
+| `spring.data.mongodb.uri`                                         | `MONGO_URI`                   | `mongodb://localhost:27017/` | MongoDB connection URI                                                                       |
+| `spring.data.mongodb.database`                                    | `MONGO_DATABASE`              | `trade-imports-fish-be`      | Database name                                                                                |
+| `spring.data.mongodb.auto-index-creation`                         | —                             | `true`                       | Auto-create indexes from `@Indexed` annotations                                              |
+| `spring.data.mongodb.read-preference`                             | `MONGO_READ_PREFERENCE`       | `secondary`                  | Read preference (secondary, primary, etc.)                                                   |
+| `spring.data.mongodb.write-concern`                               | `MONGO_WRITE_CONCERN`         | `majority`                   | Write acknowledgment level                                                                   |
+| `spring.data.mongodb.connection-pool.min-size`                    | `MONGO_POOL_MIN_SIZE`         | `10`                         | Minimum pool connections                                                                     |
+| `spring.data.mongodb.connection-pool.max-size`                    | `MONGO_POOL_MAX_SIZE`         | `100`                        | Maximum pool connections                                                                     |
+| `spring.data.mongodb.connection-pool.max-wait-time-ms`            | `MONGO_POOL_MAX_WAIT_TIME_MS` | `2000`                       | Max wait for available connection (ms)                                                       |
+| `spring.data.mongodb.connection-pool.max-connection-idle-time-ms` | `MONGO_POOL_MAX_IDLE_TIME_MS` | `60000`                      | Max idle time before closing (ms)                                                            |
 | `spring.data.mongodb.ssl.enabled`                                 | —                             | `true`                       | Configure the SSL context; TLS must also be enabled in `MONGO_URI` (for example, `tls=true`) |
 
 **Connection URI Format**:
@@ -105,7 +105,7 @@ Configured in [`logback-spring.xml`](https://github.com/DEFRA/trade-imports-fish
 | `management.endpoints.web.exposure.include` | —                    | `health,metrics,info,cache` | Exposed endpoints                                     |
 | `management.endpoint.health.show-details`   | —                    | `never`                     | Health details visibility                             |
 | `management.health.mongo.enabled`           | —                    | `false`                     | Disable MongoDB health check (non-blocking readiness) |
-| `management.metrics.enabled`                | `METRICS_ENABLED`    | `true`                      | Enable metrics collection and the EMF publisher bean |
+| `management.metrics.enabled`                | `METRICS_ENABLED`    | `true`                      | Enable metrics collection and the EMF publisher bean  |
 
 **Exposed Endpoints**:
 

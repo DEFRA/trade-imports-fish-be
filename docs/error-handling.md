@@ -249,14 +249,14 @@ This converts MongoDB's exception to our domain exception (409 Conflict).
 
 ## HTTP Status Code Reference
 
-| Code  | Meaning               | Handler                           |
-| ----- | --------------------- | --------------------------------- |
-| `200` | OK                    | Successful GET/PUT                |
-| `201` | Created               | Successful POST                   |
-| `204` | No Content            | Successful DELETE                 |
-| `400` | Bad Request           | Validation failed                 |
-| `404` | Not Found             | Resource doesn't exist            |
-| `409` | Conflict              | Name already exists               |
+| Code  | Meaning               | Handler                                        |
+| ----- | --------------------- | ---------------------------------------------- |
+| `200` | OK                    | Successful GET/PUT                             |
+| `201` | Created               | Successful POST                                |
+| `204` | No Content            | Successful DELETE                              |
+| `400` | Bad Request           | Validation failed                              |
+| `404` | Not Found             | Resource doesn't exist                         |
+| `409` | Conflict              | Name already exists                            |
 | `500` | Internal Server Error | Unexpected exception, including malformed JSON |
 
 ## Troubleshooting

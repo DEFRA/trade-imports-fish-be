@@ -142,16 +142,16 @@ The [Publish workflow](https://github.com/DEFRA/trade-imports-fish-be/blob/main/
 
 Key configuration via environment variables (see [Configuration](configuration.md) for complete list):
 
-| Variable                 | Default                     | Purpose                           |
-| ------------------------ | --------------------------- | --------------------------------- |
-| `PORT`                   | `8085`                      | Server listening port             |
-| `MONGO_URI`              | `mongodb://localhost:27017` | MongoDB connection URI            |
-| `MONGO_DATABASE`         | `trade-imports-fish-be`     | MongoDB database name             |
-| `LOG_LEVEL`              | `info`                      | Root logging level                |
-| `AWS_REGION`             | `eu-west-2`                 | AWS region                        |
-| `AWS_ENDPOINT_URL`       | (empty)                     | AWS endpoint override (for Floci) |
+| Variable                 | Default                     | Purpose                             |
+| ------------------------ | --------------------------- | ----------------------------------- |
+| `PORT`                   | `8085`                      | Server listening port               |
+| `MONGO_URI`              | `mongodb://localhost:27017` | MongoDB connection URI              |
+| `MONGO_DATABASE`         | `trade-imports-fish-be`     | MongoDB database name               |
+| `LOG_LEVEL`              | `info`                      | Root logging level                  |
+| `AWS_REGION`             | `eu-west-2`                 | AWS region                          |
+| `AWS_ENDPOINT_URL`       | (empty)                     | AWS endpoint override (for Floci)   |
 | `METRICS_ENABLED`        | `true`                      | Enable the CloudWatch EMF publisher |
-| `SPRING_PROFILES_ACTIVE` | (empty)                     | Active profiles (e.g., `local`)   |
+| `SPRING_PROFILES_ACTIVE` | (empty)                     | Active profiles (e.g., `local`)     |
 
 ## Application Lifecycle
 
@@ -234,3 +234,10 @@ The `Dockerfile` uses a multi-stage build for optimized image size.
 - **CDP Environments**: Production defaults from `application.yml` with environment variable overrides
 
 Activate profiles via `SPRING_PROFILES_ACTIVE` (comma-separated: `local,test`).
+
+### Documentation Site
+
+The `Deploy documentation` workflow (`.github/workflows/build-docs.yml`) builds this site with `mkdocs-material` 9.8.1 on Python 3.12 using `mkdocs build --strict`, writing to `_site` (`site_dir` in `mkdocs.yml`).
+
+- Pull requests to `main` that change `docs/**` or `mkdocs.yml` run the build only (on `opened`, `reopened` and `edited`).
+- Pushes to `main` touching those paths, and manual `workflow_dispatch` runs, also deploy the site to GitHub Pages.
