@@ -239,5 +239,5 @@ Activate profiles via `SPRING_PROFILES_ACTIVE` (comma-separated: `local,test`).
 
 The `Deploy documentation` workflow (`.github/workflows/build-docs.yml`) builds this site with `mkdocs-material` 9.8.1 on Python 3.12 using `mkdocs build --strict`, writing to `_site` (`site_dir` in `mkdocs.yml`).
 
-- Pull requests to `main` that change `docs/**` or `mkdocs.yml` run the build only (on `opened`, `reopened` and `edited`).
+- Pull requests to `main` that change `docs/**` or `mkdocs.yml` run the build only (on `opened`, `reopened`, `edited` and `synchronize`).
 - Pushes to `main` touching those paths, and manual `workflow_dispatch` runs, also deploy the site to GitHub Pages.
