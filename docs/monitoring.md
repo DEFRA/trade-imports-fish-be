@@ -80,9 +80,9 @@ trace.id: "550e8400-e29b-41d4-a716-446655440000"
 
 ### Collection & Export
 
-Metrics are collected by Micrometer. `management.metrics.enabled` (`METRICS_ENABLED`) controls whether the `EmfMetricsPublisher` bean is created; it does not disable metric collection. Meter registration is controlled separately by `management.metrics.enable.*`. The `aws.emf.*` properties configure EMF metadata.
+Metrics are collected by Micrometer. `management.metrics.enabled` (`METRICS_ENABLED`) controls whether the `EmfMetricsPublisher` bean is created; it does not disable metric collection. Meter registration is controlled separately by `management.metrics.enable.*`. The publisher reads only `aws.emf.namespace`; the other declared `aws.emf.*` YAML properties are not passed to the EMF library. Configure library-level settings through its `AWS_EMF_*` process environment variables; the Spring YAML placeholder defaults do not apply to those settings.
 
-**Configuration**:
+**Declared YAML configuration (only `namespace` is wired to the publisher)**:
 
 ```yaml
 aws:
