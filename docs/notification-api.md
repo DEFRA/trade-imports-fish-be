@@ -1,6 +1,6 @@
-# Transport draft alignment: API contract and test-first implementation
+# Notification draft API contract
 
-This document records the backend-only design agreed on 23 November 2026 and implemented on 24 November 2026. The POST/GET/PATCH contract below is implemented; frontend integration and shared-environment deployment remain separate work.
+This document records the backend API contract for transport, arrival and country-of-export details. The POST/GET/PATCH contract is implemented; frontend integration and shared-environment deployment remain separate work.
 
 ## Investigated baseline
 
@@ -43,7 +43,7 @@ Schema-defined optional fields may be retained and returned without making them 
 | First save | `POST /notifications` | `201 Created` | `400` invalid request; `409` creation-key conflict |
 | Identical creation replay | `POST /notifications` | `200 OK` | `400` invalid request; `409` creation-key conflict |
 | Read | `GET /notifications/{id}` | `200 OK` | `400` invalid UUID; `404` missing notification |
-| Save transport mode and/or arrival | `PATCH /notifications/{id}` | `200 OK` | `400` invalid request; `404` missing notification; `409` ownership/state conflict |
+| Save transport mode, arrival and/or export details | `PATCH /notifications/{id}` | `200 OK` | `400` invalid request; `404` missing notification; `409` ownership/state conflict |
 
 POST requires the existing canonical journey UUID in `Idempotency-Key`. That UUID becomes the notification ID. POST success, including replay, retains `Location: /notifications/{id}`.
 
@@ -51,7 +51,7 @@ GET has no body. PATCH uses the existing UUID in the path and does not use creat
 
 Writes use `Content-Type: application/json`; successes use `application/json`. Existing `400`, `404` and `409` errors retain the `application/problem+json` contract and existing trace-ID behavior. Bean-validation failures retain the field-error map, using nested paths such as `notification.transport.mode`. Unexpected persistence failures retain existing server-error behavior; they must not become successful saves.
 
-### Request body for both POST and PATCH
+### POST request body
 
 ```json
 {
@@ -64,14 +64,14 @@ Writes use `Content-Type: application/json`; successes use `application/json`. E
 }
 ```
 
-Only those fields are accepted at their respective levels:
+Only those fields are accepted at their respective levels in this POST request:
 
 - `organisationId`: required, a non-blank JSON string. On PATCH it is an ownership assertion, never an editable field.
 - `notification`: required, a non-null object.
 - `notification.transport`: required, a non-null object.
 - `notification.transport.mode`: required, a non-null string equal to one of the three canonical values, case-sensitive.
 
-Reject unknown fields at every level, including legacy `transportMethod`, arrival on POST (PATCH accepts it; see [Arrival details](#arrival-details)), document-derived transport fields, provenance, server-owned identity/state/timestamps and private persistence metadata. Preserve existing rejection of malformed JSON, trailing content, non-string organisation IDs, numeric enum values and invalid UUIDs. Requests cannot create an empty draft or clear the mode.
+Reject unknown fields at every level, including legacy `transportMethod`, arrival and export details on POST (PATCH accepts them; see [Arrival details](#arrival-details) and [Country of export and CHED reference](#country-of-export-and-ched-reference)), document-derived transport fields, provenance, server-owned identity/state/timestamps and private persistence metadata. Preserve existing rejection of malformed JSON, trailing content, non-string organisation IDs, numeric enum values and invalid UUIDs. Requests cannot create an empty draft or clear the mode.
 
 PATCH is a documented partial-update contract, **not RFC JSON Merge Patch**. Omitted fields are preserved recursively; explicit nulls and empty/no-mode patches are rejected in this initial phase. Future field writers require their own agreed validation and update semantics; adding them to the aggregate schema alone does not authorise them.
 
@@ -314,5 +314,57 @@ Backend validation uses the existing isolated tests. This ticket does not provis
 - Arrival (FISB-73), for Jason: who sets `borderControlPost`, from which reference data, and when is it reconciled after the port of entry changes?
 - Arrival (FISB-73), for Jason: where should a stored arrival that is now in the past be caught, for example at submission?
 - Arrival (FISB-73), for Jason: the frontend's seeded port-of-entry options are seaports only, so an air freight importer cannot choose an airport. Who owns the port and airport reference data, and when will it replace the seeded list?
+- CHED (FISB-74), for Jason: which countries are covered by the SPS agreement, and when will MDM country data be available?
+- CHED (FISB-74), for Jason: how should the frontend's British Antarctic Territory and Akrotiri and Dhekelia entries be represented when the backend currently requires two-letter codes?
+- CHED (FISB-74), for Jason: create a separate ticket for CHED references with country codes other than `GB`, and correct the ticket's "month code" wording to match the agreed schema contract.
+- CHED (FISB-74), for Jason: whether any CHED types other than CHED-P will apply.
 
 The backend API shape, PATCH semantics, original replay behavior, JSON/BSON boundary and preservation rules are agreed; these team dependencies do not reopen those decisions.
+
+## Country of export and CHED reference
+
+FISB-74 extends `PATCH /notifications/{id}` with `notification.countryOfExport` and `notification.ched.reference`. These fields can be saved together with transport and arrival in one request. The server derives and returns `notification.exportRegion`; clients must not send it.
+
+### Request
+
+```json
+{
+  "organisationId": "importer",
+  "notification": {
+    "countryOfExport": "NO",
+    "ched": {
+      "reference": "CHEDP.GB.2026.1234567"
+    }
+  }
+}
+```
+
+- `countryOfExport` is required when export details are patched and must match `^[A-Z]{2}$`. The backend checks format only; it does not check country membership.
+- `exportRegion` is `EU` for one of the EU-27 countries and `REST_OF_WORLD` for every other two-letter code. The backend does not currently have country reference data.
+- The SPS agreement exemption is deferred until MDM provides country data. For now, every country outside the EU-27 requires a CHED reference, including SPS countries.
+- For a rest-of-the-world country, `ched.reference` is required in the same request as `countryOfExport`. A CHED without a country is rejected. An EU country with a CHED is rejected.
+- Saving an EU country removes any stored `ched` value. Other notification fields omitted from the request are preserved.
+- `ched.reference` must match the existing schema pattern `^CHEDP\.GB\.\d{4}\.\d{7}$`, for example `CHEDP.GB.2026.1234567`. Only CHED-P with the fixed `GB` segment is accepted; lowercase and other codes are rejected. The backend does not compare the segment with the country of export or check the year range.
+- The ticket describes the segment as a month code, which conflicts with the schema's fixed `GB` code. Supporting other country codes requires a separate schema-change ticket, per Rajesh; correct the ticket wording as part of that follow-up.
+- Sending `exportRegion`, `null` values, a malformed country code, or a country/CHED combination that violates these rules returns `400`. These checks apply to the sections in the request; previously stored sections are not revalidated by an unrelated patch.
+
+### Response and storage
+
+```json
+{
+  "notification": {
+    "countryOfExport": "NO",
+    "exportRegion": "REST_OF_WORLD",
+    "ched": {
+      "reference": "CHEDP.GB.2026.1234567"
+    }
+  }
+}
+```
+
+`exportRegion` is a typed `EU` or `REST_OF_WORLD` value, and `ched` is a typed CHED reference. Country, derived region and CHED are written as dotted MongoDB fields; changing to an EU country unsets `notification.ched`.
+
+### Tests
+
+- `NotificationControllerTest`: malformed country and CHED values, missing country/reference, EU/CHED mismatch, explicit nulls and client-supplied `exportRegion`.
+- `NotificationIT`: rest-of-the-world save and GET, a combined arrival/export-details patch, aggregate-schema validation, and changing to an EU country while confirming the stored CHED is removed.

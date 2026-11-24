@@ -216,6 +216,25 @@ class NotificationControllerTest {
         verifyNoInteractions(service);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "{\"countryOfExport\":\"no\",\"ched\":{\"reference\":\"CHEDP.GB.2026.1234567\"}}",
+        "{\"countryOfExport\":null}",
+        "{\"countryOfExport\":\"NO\",\"ched\":null}",
+        "{\"countryOfExport\":\"NO\",\"ched\":{\"reference\":\"CHEDP.XI.2026.1234567\"}}",
+        "{\"ched\":{\"reference\":\"CHEDP.GB.2026.1234567\"}}",
+        "{\"countryOfExport\":\"NO\"}",
+        "{\"countryOfExport\":\"FR\",\"ched\":{\"reference\":\"CHEDP.GB.2026.1234567\"}}",
+        "{\"countryOfExport\":\"NO\",\"ched\":{\"reference\":\"CHEDP.GB.2026.1234567\"},\"exportRegion\":\"REST_OF_WORLD\"}"
+    })
+    void invalidCountryAndChedPatchesAreRejectedWithoutPersistence(String notification) throws Exception {
+        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"organisationId\":\"importer\",\"notification\":" + notification + "}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+        verifyNoInteractions(service);
+    }
+
     @Test
     void arrivalTimeSkippedByUkClocksGoingForwardIsRejected() throws Exception {
         mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
