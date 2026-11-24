@@ -25,10 +25,12 @@ import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.PatchNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.SaveNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.domain.Notification;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationStatus;
-import uk.gov.defra.trade.imports.fish.be.domain.TransportMethod;
+import uk.gov.defra.trade.imports.fish.be.domain.NotificationContent;
+import uk.gov.defra.trade.imports.fish.be.domain.TransportMode;
 import uk.gov.defra.trade.imports.fish.be.domain.repository.NotificationRepository;
 import uk.gov.defra.trade.imports.fish.be.exceptions.ConflictException;
 import uk.gov.defra.trade.imports.fish.be.exceptions.NotFoundException;
@@ -42,7 +44,10 @@ class NotificationServiceTest {
     private NotificationService service;
     private SimpleMeterRegistry meterRegistry;
     private final UUID id = UUID.randomUUID();
-    private final SaveNotificationRequest request = new SaveNotificationRequest("importer", TransportMethod.AIR_FREIGHT);
+    private final SaveNotificationRequest request = request("importer", TransportMode.AIR_FREIGHT);
+    private final PatchNotificationRequest patchRequest = new PatchNotificationRequest("importer",
+        new PatchNotificationRequest.NotificationFields(
+            new SaveNotificationRequest.TransportFields(TransportMode.AIR_FREIGHT), null));
 
     @BeforeEach
     void setUp() {
@@ -83,8 +88,8 @@ class NotificationServiceTest {
     @Test
     void rejectsReplayWithDifferentOrganisationOrTransport() {
         when(repository.findById(id.toString())).thenReturn(Optional.of(notification()));
-        var differentOrganisation = new SaveNotificationRequest("another", TransportMethod.AIR_FREIGHT);
-        var differentTransport = new SaveNotificationRequest("importer", TransportMethod.ROAD_VEHICLE);
+        var differentOrganisation = request("another", TransportMode.AIR_FREIGHT);
+        var differentTransport = request("importer", TransportMode.ROAD_VEHICLE);
         assertThatThrownBy(() -> service.create(id, differentOrganisation))
             .isInstanceOf(ConflictException.class);
         assertThatThrownBy(() -> service.create(id, differentTransport))
@@ -94,7 +99,7 @@ class NotificationServiceTest {
     @Test
     void replayAfterUpdateIsValidatedAgainstAndReturnsOriginalCreation() {
         Notification updated = notification();
-        updated.setTransportMethod(TransportMethod.ROAD_VEHICLE);
+        updated.setNotification(new NotificationContent(new NotificationContent.Transport(TransportMode.ROAD_VEHICLE)));
         updated.setUpdatedAt(NOW.plusSeconds(60));
         when(repository.findById(id.toString())).thenReturn(Optional.of(updated));
 
@@ -102,7 +107,7 @@ class NotificationServiceTest {
         assertThat(result.created()).isFalse();
         assertThat(result.notification()).isEqualTo(notification());
 
-        var updatedPayload = new SaveNotificationRequest("importer", TransportMethod.ROAD_VEHICLE);
+        var updatedPayload = request("importer", TransportMode.ROAD_VEHICLE);
         assertThatThrownBy(() -> service.create(id, updatedPayload))
             .isInstanceOf(ConflictException.class);
     }
@@ -144,7 +149,7 @@ class NotificationServiceTest {
     void updateAtomicallyChangesOnlyTransportAndUpdatedAt() {
         when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
             org.mockito.ArgumentMatchers.eq(Notification.class))).thenReturn(notification());
-        assertThat(service.update(id, request).getReference()).isEqualTo("GBN-FIS-26-AXN04");
+        assertThat(service.update(id, patchRequest).getReference()).isEqualTo("GBN-FIS-26-AXN04");
         var query = ArgumentCaptor.forClass(Query.class);
         var update = ArgumentCaptor.forClass(Update.class);
         verify(mongoTemplate).findAndModify(query.capture(), update.capture(), any(FindAndModifyOptions.class),
@@ -154,7 +159,7 @@ class NotificationServiceTest {
         assertThat(update.getValue().getUpdateObject())
             .containsOnlyKeys("$set", "$currentDate");
         assertThat(update.getValue().getUpdateObject().get("$set", org.bson.Document.class))
-            .containsOnlyKeys("transportMethod");
+            .containsOnlyKeys("notification.transport.mode");
         assertThat(update.getValue().getUpdateObject().get("$currentDate", org.bson.Document.class))
             .containsOnlyKeys("updatedAt").containsEntry("updatedAt", true);
     }
@@ -173,14 +178,19 @@ class NotificationServiceTest {
 
     @Test
     void missingUpdateIsNotAnUpsertAndOrganisationMismatchIsConflict() {
-        assertThatThrownBy(() -> service.update(id, request)).isInstanceOf(NotFoundException.class);
-        when(repository.findById(id.toString())).thenReturn(Optional.of(notification()));
-        assertThatThrownBy(() -> service.update(id, request)).isInstanceOf(ConflictException.class);
+        assertThatThrownBy(() -> service.update(id, patchRequest)).isInstanceOf(NotFoundException.class);
+        when(repository.existsById(id.toString())).thenReturn(true);
+        assertThatThrownBy(() -> service.update(id, patchRequest)).isInstanceOf(ConflictException.class);
         verify(repository, never()).insert(any(Notification.class));
     }
 
     private Notification notification() {
         return new Notification(id.toString(), "GBN-FIS-26-AXN04", NotificationStatus.DRAFT,
-            "importer", NOW, NOW, TransportMethod.AIR_FREIGHT);
+            "importer", NOW, NOW, TransportMode.AIR_FREIGHT);
+    }
+
+    private SaveNotificationRequest request(String organisationId, TransportMode mode) {
+        return new SaveNotificationRequest(organisationId, new SaveNotificationRequest.NotificationFields(
+            new SaveNotificationRequest.TransportFields(mode)));
     }
 }

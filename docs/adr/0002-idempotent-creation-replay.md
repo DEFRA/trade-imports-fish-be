@@ -1,0 +1,5 @@
+# Retain the original creation request outside notification content
+
+An identical creation retry must return the original creation representation even after later saves, without reverting the stored notification. Retain the originally accepted organisation ID and nested transport mode as immutable private creation-request metadata in the existing MongoDB record. This permits reconstruction from the original request and immutable identity, reference and creation time without introducing a separate replay collection or cross-record coordination.
+
+Explicit request and response DTOs define the API boundary. The service constructs and changes nested notification content; Spring Data retains the existing identifier and BSON-date mappings. Response projection excludes private creation metadata and MongoDB mapping fields, and schema conformance applies to canonical JSON rather than raw BSON. Replay reconstruction is response-only: reads and successful patches return current state, and replay never writes its historical representation back to storage.
