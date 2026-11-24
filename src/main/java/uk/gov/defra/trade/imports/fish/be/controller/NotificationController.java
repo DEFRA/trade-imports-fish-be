@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.PatchNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.SaveNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.NotificationResponse;
 import uk.gov.defra.trade.imports.fish.be.service.NotificationService;
@@ -55,15 +56,18 @@ public class NotificationController {
     }
 
     @PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "Patch draft transport mode",
-        description = "Initially accepts only notification.transport.mode and an organisationId ownership assertion. "
+    @Operation(summary = "Patch a draft's transport mode and/or arrival",
+        description = "Accepts an organisationId ownership assertion and at least one of notification.transport.mode "
+            + "or a complete notification.arrival (portOfEntry, expectedArrivalDate as YYYY-MM-DD and "
+            + "expectedArrivalTime as HH:mm, both UK local time). The server derives arrival.expectedArrivalAt; "
+            + "an arrival that does not exist in UK time or is in the past is rejected. "
             + "Preserves omitted fields recursively. Only DRAFT notifications can be updated.")
     @ApiResponse(responseCode = "200", description = "Draft updated")
     @ApiResponse(responseCode = "400", description = "Invalid input")
     @ApiResponse(responseCode = "404", description = "Notification not found")
     @ApiResponse(responseCode = "409", description = "Organisation or status conflict")
     @Timed("controller.updateNotification.time")
-    public NotificationResponse update(@PathVariable UUID id, @Valid @RequestBody SaveNotificationRequest request) {
+    public NotificationResponse update(@PathVariable UUID id, @Valid @RequestBody PatchNotificationRequest request) {
         return NotificationResponse.from(service.update(id, request));
     }
 }

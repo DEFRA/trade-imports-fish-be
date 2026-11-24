@@ -25,7 +25,7 @@ This document records the backend-only design agreed on 23 November 2026 and imp
 
 ### Explicit non-goals
 
-- Arrival saving, submission, deletion or additional lifecycle behavior.
+- Arrival saving (since added by FISB-73; see [Arrival details](#arrival-details)), submission, deletion or additional lifecycle behavior.
 - Writers for document-derived fields or other notification sections.
 - Transport-detail clearing or reconciliation, including provenance reconciliation.
 - New UI fields or any frontend implementation.
@@ -43,7 +43,7 @@ Schema-defined optional fields may be retained and returned without making them 
 | First save | `POST /notifications` | `201 Created` | `400` invalid request; `409` creation-key conflict |
 | Identical creation replay | `POST /notifications` | `200 OK` | `400` invalid request; `409` creation-key conflict |
 | Read | `GET /notifications/{id}` | `200 OK` | `400` invalid UUID; `404` missing notification |
-| Save transport mode | `PATCH /notifications/{id}` | `200 OK` | `400` invalid request; `404` missing notification; `409` ownership/state conflict |
+| Save transport mode and/or arrival | `PATCH /notifications/{id}` | `200 OK` | `400` invalid request; `404` missing notification; `409` ownership/state conflict |
 
 POST requires the existing canonical journey UUID in `Idempotency-Key`. That UUID becomes the notification ID. POST success, including replay, retains `Location: /notifications/{id}`.
 
@@ -71,7 +71,7 @@ Only those fields are accepted at their respective levels:
 - `notification.transport`: required, a non-null object.
 - `notification.transport.mode`: required, a non-null string equal to one of the three canonical values, case-sensitive.
 
-Reject unknown fields at every level, including legacy `transportMethod`, arrival, document-derived transport fields, provenance, server-owned identity/state/timestamps and private persistence metadata. Preserve existing rejection of malformed JSON, trailing content, non-string organisation IDs, numeric enum values and invalid UUIDs. Requests cannot create an empty draft or clear the mode.
+Reject unknown fields at every level, including legacy `transportMethod`, arrival on POST (PATCH accepts it; see [Arrival details](#arrival-details)), document-derived transport fields, provenance, server-owned identity/state/timestamps and private persistence metadata. Preserve existing rejection of malformed JSON, trailing content, non-string organisation IDs, numeric enum values and invalid UUIDs. Requests cannot create an empty draft or clear the mode.
 
 PATCH is a documented partial-update contract, **not RFC JSON Merge Patch**. Omitted fields are preserved recursively; explicit nulls and empty/no-mode patches are rejected in this initial phase. Future field writers require their own agreed validation and update semantics; adding them to the aggregate schema alone does not authorise them.
 
@@ -183,7 +183,7 @@ Legacy flat records have no compatibility reader or migration in this scope. Use
 5. Missing patches do not upsert; wrong-organisation/non-draft patches do not mutate data. Existing `404`/`409` behavior, reference collision handling and creation metrics remain intact.
 6. Create, patch, replay-original and read-current preserves the historical response/current-state distinction. Persisted original creation metadata survives reload and remains unchanged and absent from every API response.
 7. The existing journey UUID works for retries and GET-before-save recovery, including changing the transport selection after a lost creation response. A known saved draft is never silently recreated when missing.
-8. An incomplete transport draft passes the aggregate schema without arrival/commodity/submission details. No runtime aggregate/submission validator, arrival writer, new lifecycle state or generated concurrency field is introduced.
+8. An incomplete transport draft passes the aggregate schema without arrival/commodity/submission details. No runtime aggregate/submission validator, arrival writer (since added by FISB-73), new lifecycle state or generated concurrency field is introduced.
 9. BSON mapping retains the string `_id`, unique reference and BSON-date timestamps with millisecond precision. Canonical projection retains all present schema-defined content instead of dropping sections without writers.
 10. The flat body and old PUT route are not retained; API documentation and OpenAPI annotations describe the new POST/GET/PATCH contract.
 
@@ -226,6 +226,70 @@ Implementation proceeded through failing creation, storage-metadata, PATCH-prese
 
 The full `mvn clean verify` quality gate passed under the repository's Corretto 25/Maven Docker build image with the existing Testcontainers setup: 93 unit tests, 31 integration tests, no failures or skips, and the coverage gate satisfied. This required no host Java/Maven installation, new environment, shared-dataset changes or deployment.
 
+## Arrival details
+
+FISB-73 extends `PATCH /notifications/{id}` to save the [arrival](../GLOSSARY.md): the port of entry and expected arrival. It follows the transport contract above unless stated here.
+
+### Request
+
+```json
+{
+  "organisationId": "importer",
+  "notification": {
+    "arrival": {
+      "portOfEntry": "FELIXSTOWE",
+      "expectedArrivalDate": "2027-06-15",
+      "expectedArrivalTime": "14:30"
+    }
+  }
+}
+```
+
+- PATCH accepts `notification.transport`, `notification.arrival` or both; at least one is required. Both in one request are saved in one atomic update. Omitted sections are preserved; explicit nulls and `{}` are rejected.
+- POST is unchanged and remains transport-only. Arrival is not part of the creation request, so creation replay ([ADR 0002](adr/0002-idempotent-creation-replay.md)) is unaffected.
+- An arrival is saved as a whole: `portOfEntry`, `expectedArrivalDate` and `expectedArrivalTime` are all required JSON strings. It cannot be cleared or partially changed.
+- `portOfEntry`: an upper-case code matching `^[A-Z0-9-]+$`, such as `FELIXSTOWE`. It is not yet checked against port reference data or against the transport mode.
+- `expectedArrivalDate`: exactly `YYYY-MM-DD` and a real calendar date.
+- `expectedArrivalTime`: exactly `HH:mm` on the 24-hour clock, matching the aggregate schema.
+- `borderControlPost` and `expectedArrivalAt` are server-owned and rejected if sent.
+
+### Derived arrival instant
+
+The date and time are UK local time (`Europe/London`). The server derives `expectedArrivalAt` in UTC:
+
+- A time that does not exist because the UK clocks go forward is rejected.
+- A time that occurs twice because the UK clocks go back uses the earlier instant: `2027-10-31` `01:30` is `2027-10-31T00:30:00Z`.
+- An arrival before the current time is rejected. Now itself is accepted. The frontend's stricter journey rules (at least 2 hours ahead, at most 1 year ahead) are not repeated in the backend.
+
+Clock-change and past-arrival errors are reported at `notification.arrival.expectedArrivalTime` in the existing field-error map. All arrival validation happens before persistence.
+
+### Response and storage
+
+The response is the full current notification representation, including:
+
+```json
+"arrival": {
+  "portOfEntry": "FELIXSTOWE",
+  "expectedArrivalDate": "2027-06-15",
+  "expectedArrivalTime": "14:30",
+  "expectedArrivalAt": "2027-06-15T13:30:00Z"
+}
+```
+
+Arrival is a typed part of notification content. `expectedArrivalDate` and `expectedArrivalTime` are stored as strings because they are local values. `expectedArrivalAt` is stored as a BSON date for sorting and querying, and serialised like the other timestamps. PATCH sets `notification.arrival.portOfEntry`, `.expectedArrivalDate`, `.expectedArrivalTime`, `.expectedArrivalAt` and `updatedAt` as individual fields, so `borderControlPost` and every other field are preserved.
+
+There is no compatibility reader or migration for arrival maps stored in other shapes; no code wrote arrival before this change.
+
+### Known limitations
+
+- **Port and border control post are not reconciled.** `borderControlPost` is read-only and retained when the port of entry changes, so a stored border control post can go out of date, as transport details can after a mode change.
+- **A stored arrival can go out of date.** Arrival is validated only when it is in the request. A saved arrival that later passes does not block other patches and is not checked again.
+
+### Tests
+
+- `NotificationControllerTest`: strict arrival request validation, nested error paths and the clocks-go-forward case.
+- `NotificationIT`, with a fixed test `Clock` at `2026-11-01T00:00:00Z`: arrival-only and combined patches, overwriting while preserving `borderControlPost`, past and boundary arrivals, the clocks-go-back case and BSON storage of `expectedArrivalAt`.
+
 ## Frontend dependency and release coordination
 
 The current frontend is incompatible with this target backend contract. A separate frontend change must:
@@ -247,5 +311,8 @@ Backend validation uses the existing isolated tests. This ticket does not provis
 - Shared-environment rollout and rollback arrangements, including suitability of existing datasets without a legacy migration.
 - External BTMS/CDS confirmation of the existing reference format, already identified in PR #7; this ticket does not change that format.
 - Ownership of the deferred runtime aggregate validator and later submission-specific validation.
+- Arrival (FISB-73), for Jason: who sets `borderControlPost`, from which reference data, and when is it reconciled after the port of entry changes?
+- Arrival (FISB-73), for Jason: where should a stored arrival that is now in the past be caught, for example at submission?
+- Arrival (FISB-73), for Jason: the frontend's seeded port-of-entry options are seaports only, so an air freight importer cannot choose an airport. Who owns the port and airport reference data, and when will it replace the seeded list?
 
 The backend API shape, PATCH semantics, original replay behavior, JSON/BSON boundary and preservation rules are agreed; these team dependencies do not reopen those decisions.

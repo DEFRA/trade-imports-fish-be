@@ -15,7 +15,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.PatchNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.SaveNotificationRequest;
+import uk.gov.defra.trade.imports.fish.be.domain.Arrival;
 import uk.gov.defra.trade.imports.fish.be.domain.Notification;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationStatus;
 import uk.gov.defra.trade.imports.fish.be.domain.repository.NotificationRepository;
@@ -72,14 +74,25 @@ public class NotificationService {
             .orElseThrow(() -> new NotFoundException("Notification not found with id: " + id));
     }
 
-    public Notification update(UUID id, SaveNotificationRequest request) {
+    public Notification update(UUID id, PatchNotificationRequest request) {
         Query query = Query.query(Criteria.where("_id").is(id.toString())
             .and("organisationId").is(request.organisationId())
             .and("status").is(NotificationStatus.DRAFT))
             .withReadPreference(ReadPreference.primary());
-        Update update = new Update()
-            .set("notification.transport.mode", request.notification().transport().mode())
-            .currentDate("updatedAt");
+        var fields = request.notification();
+        Update update = new Update();
+        if (fields.transport() != null) {
+            update.set("notification.transport.mode", fields.transport().mode());
+        }
+        if (fields.arrival() != null) {
+            Arrival arrival = Arrival.entered(fields.arrival().portOfEntry(),
+                fields.arrival().expectedArrivalDate(), fields.arrival().expectedArrivalTime());
+            update.set("notification.arrival.portOfEntry", arrival.portOfEntry())
+                .set("notification.arrival.expectedArrivalDate", arrival.expectedArrivalDate())
+                .set("notification.arrival.expectedArrivalTime", arrival.expectedArrivalTime())
+                .set("notification.arrival.expectedArrivalAt", arrival.expectedArrivalAt());
+        }
+        update.currentDate("updatedAt");
 
         Notification updated = mongoTemplate.findAndModify(query, update,
             FindAndModifyOptions.options().returnNew(true), Notification.class);

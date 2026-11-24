@@ -25,6 +25,7 @@ import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.PatchNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.SaveNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.domain.Notification;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationStatus;
@@ -44,6 +45,9 @@ class NotificationServiceTest {
     private SimpleMeterRegistry meterRegistry;
     private final UUID id = UUID.randomUUID();
     private final SaveNotificationRequest request = request("importer", TransportMode.AIR_FREIGHT);
+    private final PatchNotificationRequest patchRequest = new PatchNotificationRequest("importer",
+        new PatchNotificationRequest.NotificationFields(
+            new SaveNotificationRequest.TransportFields(TransportMode.AIR_FREIGHT), null));
 
     @BeforeEach
     void setUp() {
@@ -145,7 +149,7 @@ class NotificationServiceTest {
     void updateAtomicallyChangesOnlyTransportAndUpdatedAt() {
         when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
             org.mockito.ArgumentMatchers.eq(Notification.class))).thenReturn(notification());
-        assertThat(service.update(id, request).getReference()).isEqualTo("GBN-FIS-26-AXN04");
+        assertThat(service.update(id, patchRequest).getReference()).isEqualTo("GBN-FIS-26-AXN04");
         var query = ArgumentCaptor.forClass(Query.class);
         var update = ArgumentCaptor.forClass(Update.class);
         verify(mongoTemplate).findAndModify(query.capture(), update.capture(), any(FindAndModifyOptions.class),
@@ -174,9 +178,9 @@ class NotificationServiceTest {
 
     @Test
     void missingUpdateIsNotAnUpsertAndOrganisationMismatchIsConflict() {
-        assertThatThrownBy(() -> service.update(id, request)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> service.update(id, patchRequest)).isInstanceOf(NotFoundException.class);
         when(repository.existsById(id.toString())).thenReturn(true);
-        assertThatThrownBy(() -> service.update(id, request)).isInstanceOf(ConflictException.class);
+        assertThatThrownBy(() -> service.update(id, patchRequest)).isInstanceOf(ConflictException.class);
         verify(repository, never()).insert(any(Notification.class));
     }
 

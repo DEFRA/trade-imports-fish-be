@@ -13,7 +13,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.mongodb.ConnectionString;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +25,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.dao.DuplicateKeyException;
@@ -77,6 +82,45 @@ class NotificationIT {
         }
     }
 
+    @TestConfiguration
+    static class FixedClockConfiguration {
+        // Before the arrival dates used below, and before Mongo's currentDate used for updatedAt.
+        @Bean
+        @Primary
+        Clock fixedClock() {
+            return Clock.fixed(Instant.parse("2026-11-01T00:00:00Z"), ZoneOffset.UTC);
+        }
+    }
+
+    @Test
+    void patchesArrivalAndPreservesTransport() throws Exception {
+        String id = UUID.randomUUID().toString();
+        assertThat(create(id)).isEqualTo(201);
+
+        String patched = mockMvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content(arrivalBody("FELIXSTOWE", "2027-06-15", "14:30")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.notification.transport.mode").value("VESSEL"))
+            .andExpect(jsonPath("$.notification.arrival.portOfEntry").value("FELIXSTOWE"))
+            .andExpect(jsonPath("$.notification.arrival.expectedArrivalDate").value("2027-06-15"))
+            .andExpect(jsonPath("$.notification.arrival.expectedArrivalTime").value("14:30"))
+            .andExpect(jsonPath("$.notification.arrival.expectedArrivalAt").value("2027-06-15T13:30:00Z"))
+            .andExpect(jsonPath("$.notification.arrival.borderControlPost").doesNotExist())
+            .andReturn().getResponse().getContentAsString();
+        assertAggregate(patched);
+
+        String read = mockMvc.perform(get("/notifications/{id}", id)).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        var mapper = new ObjectMapper();
+        assertThat(mapper.readTree(read)).isEqualTo(mapper.readTree(patched));
+
+        var arrival = mongoTemplate.getCollection("notifications").find(new org.bson.Document("_id", id)).first()
+            .get("notification", org.bson.Document.class).get("arrival", org.bson.Document.class);
+        assertThat(arrival).containsEntry("expectedArrivalDate", "2027-06-15")
+            .containsEntry("expectedArrivalTime", "14:30")
+            .containsEntry("expectedArrivalAt", Date.from(Instant.parse("2027-06-15T13:30:00Z")));
+    }
+
     @Test
     void canonicalCreationRetainsOriginalRequestAndBsonMappingOnReload() throws Exception {
         String id = UUID.randomUUID().toString();
@@ -109,6 +153,72 @@ class NotificationIT {
         assertThat(mapper.readTree(replay)).isEqualTo(mapper.readTree(created));
         assertAggregate(read);
         assertAggregate(replay);
+    }
+
+    @Test
+    void combinedPatchOverwritesArrivalAndKeepsBorderControlPost() throws Exception {
+        String id = UUID.randomUUID().toString();
+        assertThat(create(id)).isEqualTo(201);
+        mockMvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content(arrivalBody("FELIXSTOWE", "2027-06-15", "14:30")))
+            .andExpect(status().isOk());
+        mongoTemplate.getCollection("notifications").updateOne(new org.bson.Document("_id", id),
+            new org.bson.Document("$set", new org.bson.Document("notification.arrival.borderControlPost",
+                "FELIXSTOWE-BCP")));
+
+        String patched = mockMvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"organisationId":"represented-importer","notification":{
+                      "transport":{"mode":"AIR_FREIGHT"},
+                      "arrival":{"portOfEntry":"HEATHROW","expectedArrivalDate":"2026-12-24","expectedArrivalTime":"23:15"}}}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.notification.transport.mode").value("AIR_FREIGHT"))
+            .andExpect(jsonPath("$.notification.arrival.portOfEntry").value("HEATHROW"))
+            .andExpect(jsonPath("$.notification.arrival.borderControlPost").value("FELIXSTOWE-BCP"))
+            .andExpect(jsonPath("$.notification.arrival.expectedArrivalDate").value("2026-12-24"))
+            .andExpect(jsonPath("$.notification.arrival.expectedArrivalTime").value("23:15"))
+            .andExpect(jsonPath("$.notification.arrival.expectedArrivalAt").value("2026-12-24T23:15:00Z"))
+            .andReturn().getResponse().getContentAsString();
+        assertAggregate(patched);
+        String read = mockMvc.perform(get("/notifications/{id}", id)).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        var mapper = new ObjectMapper();
+        assertThat(mapper.readTree(read)).isEqualTo(mapper.readTree(patched));
+    }
+
+    @Test
+    void pastArrivalIsRejectedWithoutChangingTheDraft() throws Exception {
+        String id = UUID.randomUUID().toString();
+        assertThat(create(id)).isEqualTo(201);
+        String before = mockMvc.perform(get("/notifications/{id}", id)).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        mockMvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content(arrivalBody("FELIXSTOWE", "2026-10-31", "23:59")))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors['notification.arrival.expectedArrivalTime']").exists());
+
+        String after = mockMvc.perform(get("/notifications/{id}", id)).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        var mapper = new ObjectMapper();
+        assertThat(mapper.readTree(after)).isEqualTo(mapper.readTree(before));
+
+        // Exactly the fixed clock's instant is not in the past, which also shows the validator uses that clock.
+        mockMvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content(arrivalBody("FELIXSTOWE", "2026-11-01", "00:00")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.notification.arrival.expectedArrivalAt").value("2026-11-01T00:00:00Z"));
+    }
+
+    @Test
+    void arrivalTimeRepeatedByUkClocksGoingBackUsesTheEarlierInstant() throws Exception {
+        String id = UUID.randomUUID().toString();
+        assertThat(create(id)).isEqualTo(201);
+        mockMvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content(arrivalBody("FELIXSTOWE", "2027-10-31", "01:30")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.notification.arrival.expectedArrivalAt").value("2027-10-31T00:30:00Z"));
     }
 
     @Test
@@ -152,12 +262,14 @@ class NotificationIT {
               }]
             }
             """);
-        mongoTemplate.getCollection("notifications").updateOne(new org.bson.Document("_id", id),
-            new org.bson.Document("$set", additions));
         var mapper = new ObjectMapper();
         ObjectNode expected = mapper.readValue(created, ObjectNode.class);
         expected.setAll(mapper.readValue(additions.toJson(), ObjectNode.class));
         ((ObjectNode) expected.path("notification").path("transport")).put("mode", "AIR_FREIGHT");
+        additions.get("notification", org.bson.Document.class).get("arrival", org.bson.Document.class)
+            .put("expectedArrivalAt", Date.from(Instant.parse("2026-11-30T06:00:00Z")));
+        mongoTemplate.getCollection("notifications").updateOne(new org.bson.Document("_id", id),
+            new org.bson.Document("$set", additions));
         Instant previousSaveTime = Instant.parse(expected.path("updatedAt").asText());
 
         for (int save = 0; save < 2; save++) {
@@ -370,6 +482,11 @@ class NotificationIT {
 
     private String body(String mode) {
         return "{\"organisationId\":\"represented-importer\",\"notification\":{\"transport\":{\"mode\":\"" + mode + "\"}}}";
+    }
+
+    private String arrivalBody(String port, String date, String time) {
+        return "{\"organisationId\":\"represented-importer\",\"notification\":{\"arrival\":{\"portOfEntry\":\""
+            + port + "\",\"expectedArrivalDate\":\"" + date + "\",\"expectedArrivalTime\":\"" + time + "\"}}}";
     }
 
     private double counterValue(String name) {

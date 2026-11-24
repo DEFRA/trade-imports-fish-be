@@ -7,7 +7,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record NotificationContent(
     Transport transport,
-    Map<String, Object> arrival,
+    Arrival arrival,
     String landingType,
     String countryOfExport,
     String exportRegion,

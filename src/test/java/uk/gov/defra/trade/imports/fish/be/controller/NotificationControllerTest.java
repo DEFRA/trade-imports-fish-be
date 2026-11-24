@@ -172,6 +172,62 @@ class NotificationControllerTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {
+        "{\"notification\":null}",
+        "{\"notification\":{\"transport\":null}}",
+        "{\"notification\":{\"arrival\":null}}",
+        "{\"notification\":{\"arrival\":{}}}",
+        "{\"notification\":{\"arrival\":{\"expectedArrivalDate\":\"2099-06-15\",\"expectedArrivalTime\":\"14:30\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"FELIXSTOWE\",\"expectedArrivalTime\":\"14:30\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"FELIXSTOWE\",\"expectedArrivalDate\":\"2099-06-15\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":null,\"expectedArrivalDate\":\"2099-06-15\",\"expectedArrivalTime\":\"14:30\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"\",\"expectedArrivalDate\":\"2099-06-15\",\"expectedArrivalTime\":\"14:30\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"felixstowe\",\"expectedArrivalDate\":\"2099-06-15\",\"expectedArrivalTime\":\"14:30\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\" FELIXSTOWE\",\"expectedArrivalDate\":\"2099-06-15\",\"expectedArrivalTime\":\"14:30\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":123,\"expectedArrivalDate\":\"2099-06-15\",\"expectedArrivalTime\":\"14:30\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"FELIXSTOWE\",\"expectedArrivalDate\":\"2099-6-15\",\"expectedArrivalTime\":\"14:30\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"FELIXSTOWE\",\"expectedArrivalDate\":\"15/06/2099\",\"expectedArrivalTime\":\"14:30\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"FELIXSTOWE\",\"expectedArrivalDate\":\"2099-02-30\",\"expectedArrivalTime\":\"14:30\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"FELIXSTOWE\",\"expectedArrivalDate\":\"2099-06-15T14:30\",\"expectedArrivalTime\":\"14:30\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"FELIXSTOWE\",\"expectedArrivalDate\":\"2099-06-15\",\"expectedArrivalTime\":\"9:30\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"FELIXSTOWE\",\"expectedArrivalDate\":\"2099-06-15\",\"expectedArrivalTime\":\"09:30:00\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"FELIXSTOWE\",\"expectedArrivalDate\":\"2099-06-15\",\"expectedArrivalTime\":\"24:00\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"FELIXSTOWE\",\"expectedArrivalDate\":\"2099-06-15\",\"expectedArrivalTime\":\"14:60\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"FELIXSTOWE\",\"expectedArrivalDate\":\"2099-06-15\",\"expectedArrivalTime\":\"14:30\",\"borderControlPost\":\"FELIXSTOWE-BCP\"}}}",
+        "{\"notification\":{\"arrival\":{\"portOfEntry\":\"FELIXSTOWE\",\"expectedArrivalDate\":\"2099-06-15\",\"expectedArrivalTime\":\"14:30\",\"expectedArrivalAt\":\"2099-06-15T13:30:00Z\"}}}"
+    })
+    void invalidArrivalPatchesAreRejectedWithoutPersistence(String notification) throws Exception {
+        String body = "{\"organisationId\":\"importer\"," + notification.substring(1);
+        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.title").value("Validation Error"));
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void impossibleArrivalDateReportsItsNestedValidationPath() throws Exception {
+        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
+                {"organisationId":"importer","notification":{"arrival":{
+                  "portOfEntry":"FELIXSTOWE","expectedArrivalDate":"2099-02-30","expectedArrivalTime":"14:30"}}}
+                """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors['notification.arrival.expectedArrivalDate']").exists());
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void arrivalTimeSkippedByUkClocksGoingForwardIsRejected() throws Exception {
+        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
+                {"organisationId":"importer","notification":{"arrival":{
+                  "portOfEntry":"FELIXSTOWE","expectedArrivalDate":"2099-03-29","expectedArrivalTime":"01:30"}}}
+                """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors['notification.arrival.expectedArrivalTime']").exists());
+        verifyNoInteractions(service);
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"123", "1.5", "true", "false"})
     void nonStringOrganisationIdIsRejectedOnUpdate(String organisationId) throws Exception {
         mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
