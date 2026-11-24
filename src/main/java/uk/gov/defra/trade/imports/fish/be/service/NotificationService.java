@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,12 +16,16 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.CommodityFields;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.PatchNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.SaveNotificationRequest;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.SpeciesFields;
 import uk.gov.defra.trade.imports.fish.be.domain.Arrival;
+import uk.gov.defra.trade.imports.fish.be.domain.Commodity;
 import uk.gov.defra.trade.imports.fish.be.domain.ExportRegion;
-import uk.gov.defra.trade.imports.fish.be.domain.Notification;
+import uk.gov.defra.trade.imports.fish.be.domain.NotificationAggregate;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationStatus;
+import uk.gov.defra.trade.imports.fish.be.domain.Species;
 import uk.gov.defra.trade.imports.fish.be.domain.repository.NotificationRepository;
 import uk.gov.defra.trade.imports.fish.be.exceptions.ConflictException;
 import uk.gov.defra.trade.imports.fish.be.exceptions.NotFoundException;
@@ -37,7 +42,7 @@ public class NotificationService {
     private final MeterRegistry meterRegistry;
     private final Clock clock;
 
-    public record CreationResult(Notification notification, boolean created) {}
+    public record CreationResult(NotificationAggregate notification, boolean created) {}
 
     public CreationResult create(UUID key, SaveNotificationRequest request) {
         String id = key.toString();
@@ -48,11 +53,11 @@ public class NotificationService {
 
         Instant createdAt = clock.instant().truncatedTo(ChronoUnit.MILLIS);
         for (int attempt = 0; attempt < MAX_REFERENCE_ATTEMPTS; attempt++) {
-            Notification notification = new Notification(id, referenceNumberGenerator.generate(),
+            NotificationAggregate notification = new NotificationAggregate(id, referenceNumberGenerator.generate(),
                 NotificationStatus.DRAFT, request.organisationId(), createdAt, createdAt,
                 request.notification().transport().mode());
             try {
-                Notification saved = repository.insert(notification);
+                NotificationAggregate saved = repository.insert(notification);
                 meterRegistry.counter("notification_created").increment();
                 log.info("Created draft notification with id: {}", id);
                 return new CreationResult(saved, true);
@@ -70,12 +75,12 @@ public class NotificationService {
         throw new IllegalStateException("Unable to allocate a unique notification reference");
     }
 
-    public Notification findById(UUID id) {
+    public NotificationAggregate findById(UUID id) {
         return repository.findById(id.toString())
             .orElseThrow(() -> new NotFoundException("Notification not found with id: " + id));
     }
 
-    public Notification update(UUID id, PatchNotificationRequest request) {
+    public NotificationAggregate update(UUID id, PatchNotificationRequest request) {
         Query query = Query.query(Criteria.where("_id").is(id.toString())
             .and("organisationId").is(request.organisationId())
             .and("status").is(NotificationStatus.DRAFT))
@@ -103,10 +108,16 @@ public class NotificationService {
                 update.set("notification.ched.reference", fields.ched().reference());
             }
         }
+        if (fields.commodities() != null) {
+            List<Commodity> commodities = fields.commodities().stream()
+                .map(this::toCommodityDomain)
+                .toList();
+            update.set("notification.commodities", commodities);
+        }
         update.currentDate("updatedAt");
 
-        Notification updated = mongoTemplate.findAndModify(query, update,
-            FindAndModifyOptions.options().returnNew(true), Notification.class);
+        NotificationAggregate updated = mongoTemplate.findAndModify(query, update,
+            FindAndModifyOptions.options().returnNew(true), NotificationAggregate.class);
         if (updated == null) {
             if (!repository.existsById(id.toString())) {
                 throw new NotFoundException("Notification not found with id: " + id);
@@ -118,7 +129,32 @@ public class NotificationService {
         return updated;
     }
 
-    private CreationResult replay(Notification notification, SaveNotificationRequest request) {
+    private Commodity toCommodityDomain(CommodityFields commodityFields) {
+        List<Species> species = commodityFields.species() != null
+            ? commodityFields.species().stream()
+                .map(this::toSpeciesDomain)
+                .toList()
+            : null; // Should never be null as at least one species is required
+        return new Commodity(
+            commodityFields.commodityCode(),
+            commodityFields.description(),
+            species,
+            commodityFields.totalNetWeightKg(),
+            commodityFields.totalNetFisheryProductWeightKg()
+        );
+    }
+
+    private Species toSpeciesDomain(SpeciesFields speciesFields) {
+        return new Species(
+            speciesFields.speciesCode(),
+            speciesFields.commonName(),
+            speciesFields.scientificName(),
+            speciesFields.netWeightKg(),
+            speciesFields.netFisheryProductWeightKg()
+        );
+    }
+
+    private CreationResult replay(NotificationAggregate notification, SaveNotificationRequest request) {
         var originalRequest = notification.getCreationRequest();
         if (originalRequest == null) {
             throw new IllegalStateException("Notification is missing its original creation request");
@@ -130,7 +166,7 @@ public class NotificationService {
             throw new ConflictException("Idempotency key has already been used with a different request");
         }
         log.info("Replayed draft creation with id: {}", notification.getId());
-        Notification original = new Notification(notification.getId(), notification.getReference(),
+        NotificationAggregate original = new NotificationAggregate(notification.getId(), notification.getReference(),
             notification.getStatus(), notification.getOrganisationId(), notification.getCreatedAt(),
             notification.getCreatedAt(), originalRequest.notification().transport().mode());
         return new CreationResult(original, false);

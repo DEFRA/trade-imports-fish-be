@@ -25,11 +25,14 @@ import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.CommodityFields;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.NotificationFields;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.PatchNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.SaveNotificationRequest;
-import uk.gov.defra.trade.imports.fish.be.domain.Notification;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.SpeciesFields;
+import uk.gov.defra.trade.imports.fish.be.domain.NotificationAggregate;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationStatus;
-import uk.gov.defra.trade.imports.fish.be.domain.NotificationContent;
+import uk.gov.defra.trade.imports.fish.be.domain.Notification;
 import uk.gov.defra.trade.imports.fish.be.domain.TransportMode;
 import uk.gov.defra.trade.imports.fish.be.domain.repository.NotificationRepository;
 import uk.gov.defra.trade.imports.fish.be.exceptions.ConflictException;
@@ -46,7 +49,7 @@ class NotificationServiceTest {
     private final UUID id = UUID.randomUUID();
     private final SaveNotificationRequest request = request("importer", TransportMode.AIR_FREIGHT);
     private final PatchNotificationRequest patchRequest = new PatchNotificationRequest("importer",
-        new PatchNotificationRequest.NotificationFields(
+        new NotificationFields(
             new SaveNotificationRequest.TransportFields(TransportMode.AIR_FREIGHT), null));
 
     @BeforeEach
@@ -64,7 +67,7 @@ class NotificationServiceTest {
     @Test
     void createsMinimalDraftWithServerOwnedFields() {
         when(generator.generate()).thenReturn("GBN-FIS-26-AXN04");
-        when(repository.insert(any(Notification.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.insert(any(NotificationAggregate.class))).thenAnswer(invocation -> invocation.getArgument(0));
         var result = service.create(id, request);
         assertThat(result.created()).isTrue();
         assertThat(result.notification()).isEqualTo(notification());
@@ -73,7 +76,7 @@ class NotificationServiceTest {
     @Test
     void replayKeepsIdentityWithoutAnotherInsert() {
         Instant originalTime = NOW.minusSeconds(60);
-        Notification existing = notification();
+        NotificationAggregate existing = notification();
         existing.setCreatedAt(originalTime);
         existing.setUpdatedAt(originalTime);
         when(repository.findById(id.toString())).thenReturn(Optional.of(existing));
@@ -82,7 +85,7 @@ class NotificationServiceTest {
         assertThat(result.notification().getReference()).isEqualTo("GBN-FIS-26-AXN04");
         assertThat(result.notification().getCreatedAt()).isEqualTo(originalTime);
         assertThat(result.notification().getUpdatedAt()).isEqualTo(originalTime);
-        verify(repository, never()).insert(any(Notification.class));
+        verify(repository, never()).insert(any(NotificationAggregate.class));
     }
 
     @Test
@@ -98,8 +101,8 @@ class NotificationServiceTest {
 
     @Test
     void replayAfterUpdateIsValidatedAgainstAndReturnsOriginalCreation() {
-        Notification updated = notification();
-        updated.setNotification(new NotificationContent(new NotificationContent.Transport(TransportMode.ROAD_VEHICLE)));
+        NotificationAggregate updated = notification();
+        updated.setNotification(new Notification(new Notification.Transport(TransportMode.ROAD_VEHICLE)));
         updated.setUpdatedAt(NOW.plusSeconds(60));
         when(repository.findById(id.toString())).thenReturn(Optional.of(updated));
 
@@ -118,7 +121,7 @@ class NotificationServiceTest {
             .thenReturn(Optional.empty())
             .thenReturn(Optional.of(notification()));
         when(generator.generate()).thenReturn("GBN-FIS-26-OTHER");
-        when(repository.insert(any(Notification.class))).thenThrow(new DuplicateKeyException("duplicate id"));
+        when(repository.insert(any(NotificationAggregate.class))).thenThrow(new DuplicateKeyException("duplicate id"));
         var result = service.create(id, request);
         assertThat(result.created()).isFalse();
         assertThat(result.notification().getReference()).isEqualTo("GBN-FIS-26-AXN04");
@@ -127,7 +130,7 @@ class NotificationServiceTest {
     @Test
     void referenceCollisionRetriesWithoutChangingIdentity() {
         when(generator.generate()).thenReturn("GBN-FIS-26-CLASH", "GBN-FIS-26-AXN04");
-        when(repository.insert(any(Notification.class)))
+        when(repository.insert(any(NotificationAggregate.class)))
             .thenThrow(new DuplicateKeyException("duplicate reference"))
             .thenAnswer(invocation -> invocation.getArgument(0));
         when(repository.existsByReference("GBN-FIS-26-CLASH")).thenReturn(true);
@@ -138,7 +141,7 @@ class NotificationServiceTest {
     @Test
     void referenceCollisionRetriesAreBoundedAndOtherDuplicateFailuresPropagate() {
         when(generator.generate()).thenReturn("GBN-FIS-26-CLASH");
-        when(repository.insert(any(Notification.class))).thenThrow(new DuplicateKeyException("duplicate"));
+        when(repository.insert(any(NotificationAggregate.class))).thenThrow(new DuplicateKeyException("duplicate"));
         when(repository.existsByReference("GBN-FIS-26-CLASH")).thenReturn(true);
         assertThatThrownBy(() -> service.create(id, request)).isInstanceOf(IllegalStateException.class);
         when(repository.existsByReference("GBN-FIS-26-CLASH")).thenReturn(false);
@@ -148,12 +151,12 @@ class NotificationServiceTest {
     @Test
     void updateAtomicallyChangesOnlyTransportAndUpdatedAt() {
         when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
-            org.mockito.ArgumentMatchers.eq(Notification.class))).thenReturn(notification());
+            org.mockito.ArgumentMatchers.eq(NotificationAggregate.class))).thenReturn(notification());
         assertThat(service.update(id, patchRequest).getReference()).isEqualTo("GBN-FIS-26-AXN04");
         var query = ArgumentCaptor.forClass(Query.class);
         var update = ArgumentCaptor.forClass(Update.class);
         verify(mongoTemplate).findAndModify(query.capture(), update.capture(), any(FindAndModifyOptions.class),
-            org.mockito.ArgumentMatchers.eq(Notification.class));
+            org.mockito.ArgumentMatchers.eq(NotificationAggregate.class));
         assertThat(query.getValue().getQueryObject()).containsEntry("_id", id.toString())
             .containsEntry("organisationId", "importer").containsEntry("status", NotificationStatus.DRAFT);
         assertThat(update.getValue().getUpdateObject())
@@ -170,7 +173,7 @@ class NotificationServiceTest {
         service = new NotificationService(repository, generator, mongoTemplate, meterRegistry,
             Clock.fixed(preciseTime, ZoneOffset.UTC));
         when(generator.generate()).thenReturn("GBN-FIS-26-AXN04");
-        when(repository.insert(any(Notification.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.insert(any(NotificationAggregate.class))).thenAnswer(invocation -> invocation.getArgument(0));
         var result = service.create(id, request);
         assertThat(result.notification().getCreatedAt()).isEqualTo(NOW);
         assertThat(result.notification().getUpdatedAt()).isEqualTo(NOW);
@@ -181,11 +184,47 @@ class NotificationServiceTest {
         assertThatThrownBy(() -> service.update(id, patchRequest)).isInstanceOf(NotFoundException.class);
         when(repository.existsById(id.toString())).thenReturn(true);
         assertThatThrownBy(() -> service.update(id, patchRequest)).isInstanceOf(ConflictException.class);
-        verify(repository, never()).insert(any(Notification.class));
+        verify(repository, never()).insert(any(NotificationAggregate.class));
     }
 
-    private Notification notification() {
-        return new Notification(id.toString(), "GBN-FIS-26-AXN04", NotificationStatus.DRAFT,
+    @Test
+    void updateAtomicallyChangesCommoditiesAndUpdatedAt() {
+        var commodities = java.util.List.of(
+            new CommodityFields(
+                "03024400",
+                "Mackerel, fresh or chilled",
+                java.util.List.of(
+                    new SpeciesFields(
+                        "MAC",
+                        "Atlantic mackerel",
+                        "Scomber scombrus",
+                        1200.0,
+                        1150.0
+                    )
+                ),
+                2000.0,
+                1900.0
+            )
+        );
+        var patchRequestWithCommodities = new PatchNotificationRequest("importer",
+            new NotificationFields(
+                null, null, null, null, commodities));
+        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+            org.mockito.ArgumentMatchers.eq(NotificationAggregate.class))).thenReturn(notification());
+        assertThat(service.update(id, patchRequestWithCommodities).getReference()).isEqualTo("GBN-FIS-26-AXN04");
+        var update = ArgumentCaptor.forClass(Update.class);
+        verify(mongoTemplate).findAndModify(any(Query.class), update.capture(), any(FindAndModifyOptions.class),
+            org.mockito.ArgumentMatchers.eq(NotificationAggregate.class));
+        assertThat(update.getValue().getUpdateObject())
+            .containsOnlyKeys("$set", "$currentDate");
+        assertThat(update.getValue().getUpdateObject().get("$set", org.bson.Document.class))
+            .containsOnlyKeys("notification.commodities");
+        assertThat(update.getValue().getUpdateObject().get("$currentDate", org.bson.Document.class))
+            .containsOnlyKeys("updatedAt").containsEntry("updatedAt", true);
+    }
+
+    private NotificationAggregate notification() {
+        return new NotificationAggregate(id.toString(), "GBN-FIS-26-AXN04", NotificationStatus.DRAFT,
             "importer", NOW, NOW, TransportMode.AIR_FREIGHT);
     }
 

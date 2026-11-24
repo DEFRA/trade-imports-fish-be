@@ -39,7 +39,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
-import uk.gov.defra.trade.imports.fish.be.domain.Notification;
+import uk.gov.defra.trade.imports.fish.be.domain.NotificationAggregate;
 import uk.gov.defra.trade.imports.fish.be.domain.repository.NotificationRepository;
 
 @ExtendWith(OutputCaptureExtension.class)
@@ -429,7 +429,7 @@ class NotificationIT {
         assertThat(stored.get("updatedAt")).isInstanceOf(Date.class);
         assertThat(output.toString()).contains(traceId).contains("Created draft notification");
 
-        Notification duplicate = repository.findById(id).orElseThrow();
+        NotificationAggregate duplicate = repository.findById(id).orElseThrow();
         duplicate.setId(UUID.randomUUID().toString());
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> repository.insert(duplicate))
             .isInstanceOf(DuplicateKeyException.class);

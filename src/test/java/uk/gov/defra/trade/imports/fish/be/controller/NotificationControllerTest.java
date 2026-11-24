@@ -34,9 +34,9 @@ import org.springframework.http.converter.json.ProblemDetailJacksonMixin;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.defra.trade.imports.fish.be.configuration.StrictUuidBindingAdvice;
-import uk.gov.defra.trade.imports.fish.be.domain.Notification;
+import uk.gov.defra.trade.imports.fish.be.domain.NotificationAggregate;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationStatus;
-import uk.gov.defra.trade.imports.fish.be.domain.NotificationContent;
+import uk.gov.defra.trade.imports.fish.be.domain.Notification;
 import uk.gov.defra.trade.imports.fish.be.domain.TransportMode;
 import uk.gov.defra.trade.imports.fish.be.exceptions.ConflictException;
 import uk.gov.defra.trade.imports.fish.be.exceptions.GlobalExceptionHandler;
@@ -67,12 +67,12 @@ class NotificationControllerTest {
     @ParameterizedTest
     @ValueSource(strings = {"VESSEL", "AIR_FREIGHT", "ROAD_VEHICLE"})
     void createsEachTransportMode(String mode) throws Exception {
-        Notification notification = notification();
+        NotificationAggregate notification = notification();
         when(service.create(any(), any())).thenAnswer(invocation -> {
             var request = invocation.getArgument(1,
                 uk.gov.defra.trade.imports.fish.be.controller.dto.SaveNotificationRequest.class);
-            notification.setNotification(new NotificationContent(
-                new NotificationContent.Transport(request.notification().transport().mode())));
+            notification.setNotification(new Notification(
+                new Notification.Transport(request.notification().transport().mode())));
             return new NotificationService.CreationResult(notification, true);
         });
         String response = mvc.perform(post("/notifications").header("Idempotency-Key", id)
@@ -268,8 +268,8 @@ class NotificationControllerTest {
 
     @Test
     void readsIncompleteCanonicalDraftWithoutRequiringTransport() throws Exception {
-        Notification draft = notification();
-        draft.setNotification(new NotificationContent(null));
+        NotificationAggregate draft = notification();
+        draft.setNotification(new Notification(null));
         when(service.findById(id)).thenReturn(draft);
         String response = mvc.perform(get("/notifications/{id}", id))
             .andExpect(status().isOk())
@@ -284,6 +284,56 @@ class NotificationControllerTest {
         mvc.perform(patch("/notifications/{id}", id)
                 .contentType("application/merge-patch+json").content(validBody()))
             .andExpect(status().isUnsupportedMediaType());
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void emptyCommoditiesListIsRejectedOnUpdate() throws Exception {
+        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
+                {"organisationId":"importer","notification":{"commodities":[]}}
+                """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.title").value("Validation Error"));
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void emptyOrganisationIdIsRejectedOnUpdate() throws Exception {
+        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
+                {"organisationId":"","notification":{"transport":{"mode":"AIR_FREIGHT"}}}
+                """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.title").value("Validation Error"));
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void whitespaceOnlyOrganisationIdIsRejectedOnUpdate() throws Exception {
+        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
+                {"organisationId":" ","notification":{"transport":{"mode":"AIR_FREIGHT"}}}
+                """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.title").value("Validation Error"));
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void nullNotificationIsRejectedOnUpdate() throws Exception {
+        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
+                {"organisationId":"importer","notification":null}
+                """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.title").value("Validation Error"));
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void emptyNotificationObjectIsRejectedOnUpdate() throws Exception {
+        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
+                {"organisationId":"importer","notification":{}}
+                """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.title").value("Validation Error"));
         verifyNoInteractions(service);
     }
 
@@ -352,8 +402,8 @@ class NotificationControllerTest {
             .andExpect(status().isConflict()).andExpect(jsonPath("$.title").value("Resource Conflict"));
     }
 
-    private Notification notification() {
-        return new Notification(id.toString(), "GBN-FIS-26-AXN04", NotificationStatus.DRAFT,
+    private NotificationAggregate notification() {
+        return new NotificationAggregate(id.toString(), "GBN-FIS-26-AXN04", NotificationStatus.DRAFT,
             "importer", Instant.parse("2026-11-16T16:00:00.123Z"),
             Instant.parse("2026-11-16T16:00:00.123Z"), TransportMode.AIR_FREIGHT);
     }

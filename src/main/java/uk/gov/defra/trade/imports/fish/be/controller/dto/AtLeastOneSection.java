@@ -20,11 +20,11 @@ public @interface AtLeastOneSection {
 
     Class<? extends Payload>[] payload() default {};
 
-    class Validator implements ConstraintValidator<AtLeastOneSection, PatchNotificationRequest.NotificationFields> {
+    class Validator implements ConstraintValidator<AtLeastOneSection, NotificationFields> {
         @Override
-        public boolean isValid(PatchNotificationRequest.NotificationFields fields, ConstraintValidatorContext context) {
+        public boolean isValid(NotificationFields fields, ConstraintValidatorContext context) {
             return fields == null || fields.transport() != null || fields.arrival() != null
-                || fields.countryOfExport() != null || fields.ched() != null;
+                || fields.countryOfExport() != null || fields.ched() != null || fields.commodities() != null;
         }
     }
 }
