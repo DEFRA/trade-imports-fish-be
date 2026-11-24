@@ -47,7 +47,7 @@ public class NotificationService {
         for (int attempt = 0; attempt < MAX_REFERENCE_ATTEMPTS; attempt++) {
             Notification notification = new Notification(id, referenceNumberGenerator.generate(),
                 NotificationStatus.DRAFT, request.organisationId(), createdAt, createdAt,
-                request.transportMethod());
+                request.notification().transport().mode());
             try {
                 Notification saved = repository.insert(notification);
                 meterRegistry.counter("notification_created").increment();
@@ -78,13 +78,15 @@ public class NotificationService {
             .and("status").is(NotificationStatus.DRAFT))
             .withReadPreference(ReadPreference.primary());
         Update update = new Update()
-            .set("transportMethod", request.transportMethod())
+            .set("notification.transport.mode", request.notification().transport().mode())
             .currentDate("updatedAt");
 
         Notification updated = mongoTemplate.findAndModify(query, update,
             FindAndModifyOptions.options().returnNew(true), Notification.class);
         if (updated == null) {
-            findById(id);
+            if (!repository.existsById(id.toString())) {
+                throw new NotFoundException("Notification not found with id: " + id);
+            }
             throw new ConflictException("Only a draft belonging to the same organisation can be updated");
         }
         meterRegistry.counter("notification_updated").increment();
@@ -93,15 +95,20 @@ public class NotificationService {
     }
 
     private CreationResult replay(Notification notification, SaveNotificationRequest request) {
+        var originalRequest = notification.getCreationRequest();
+        if (originalRequest == null) {
+            throw new IllegalStateException("Notification is missing its original creation request");
+        }
         if (notification.getStatus() != NotificationStatus.DRAFT
             || !notification.getOrganisationId().equals(request.organisationId())
-            || notification.getCreationTransportMethod() != request.transportMethod()) {
+            || !originalRequest.organisationId().equals(request.organisationId())
+            || originalRequest.notification().transport().mode() != request.notification().transport().mode()) {
             throw new ConflictException("Idempotency key has already been used with a different request");
         }
         log.info("Replayed draft creation with id: {}", notification.getId());
         Notification original = new Notification(notification.getId(), notification.getReference(),
             notification.getStatus(), notification.getOrganisationId(), notification.getCreatedAt(),
-            notification.getCreatedAt(), notification.getCreationTransportMethod());
+            notification.getCreatedAt(), originalRequest.notification().transport().mode());
         return new CreationResult(original, false);
     }
 }

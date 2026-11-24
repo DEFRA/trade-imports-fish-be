@@ -2,8 +2,12 @@ package uk.gov.defra.trade.imports.fish.be.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -22,24 +26,29 @@ public class Notification {
     private String organisationId;
     private Instant createdAt;
     private Instant updatedAt;
-    private TransportMethod transportMethod;
+    private NotificationContent notification;
+    private String importerOrganisationId;
+    private Map<String, Object> createdBy;
+    private Integer concurrencyToken;
+    private Instant submittedAt;
+    private Instant receivedAt;
+    private List<Map<String, Object>> fieldProvenance;
 
-    /**
-     * Transport method from the original creation request. Never changed by updates, so idempotent
-     * creation replays are validated and answered against the original request.
-     */
     @JsonIgnore
-    private TransportMethod creationTransportMethod;
+    @Setter(AccessLevel.NONE)
+    private CreationRequest creationRequest;
+
+    public record CreationRequest(String organisationId, NotificationContent notification) {}
 
     public Notification(String id, String reference, NotificationStatus status, String organisationId,
-        Instant createdAt, Instant updatedAt, TransportMethod transportMethod) {
+        Instant createdAt, Instant updatedAt, TransportMode mode) {
         this.id = id;
         this.reference = reference;
         this.status = status;
         this.organisationId = organisationId;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.transportMethod = transportMethod;
-        this.creationTransportMethod = transportMethod;
+        this.notification = new NotificationContent(new NotificationContent.Transport(mode));
+        this.creationRequest = new CreationRequest(organisationId, this.notification);
     }
 }

@@ -1,0 +1,5 @@
+# Canonical notification JSON and incremental draft updates
+
+The notification aggregate schema defines canonical JSON, not raw MongoDB BSON. The API uses its terminology and returns the full notification representation, rather than exposing the persistence record or retaining the flat transport contract. Creation accepts a nested transport-only subset; a general `PATCH /notifications/{id}` changes only supplied supported fields and preserves omitted fields at every level. Initially only transport mode is writable, avoiding whole-aggregate replacement and allowing later journey steps to add supported fields without making incomplete drafts satisfy submission requirements.
+
+Creation replays continue to validate against the original creation request and return the original creation representation; reads and successful patches return current state. Transport-detail reconciliation and runtime aggregate validation remain separate work. Strict request validation and canonical-JSON schema conformance tests are required for this alignment.
