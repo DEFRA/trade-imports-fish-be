@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.PatchNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.SaveNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.domain.Arrival;
+import uk.gov.defra.trade.imports.fish.be.domain.ExportRegion;
 import uk.gov.defra.trade.imports.fish.be.domain.Notification;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationStatus;
 import uk.gov.defra.trade.imports.fish.be.domain.repository.NotificationRepository;
@@ -91,6 +92,16 @@ public class NotificationService {
                 .set("notification.arrival.expectedArrivalDate", arrival.expectedArrivalDate())
                 .set("notification.arrival.expectedArrivalTime", arrival.expectedArrivalTime())
                 .set("notification.arrival.expectedArrivalAt", arrival.expectedArrivalAt());
+        }
+        if (fields.countryOfExport() != null) {
+            ExportRegion exportRegion = ExportRegion.fromCountryOfExport(fields.countryOfExport());
+            update.set("notification.countryOfExport", fields.countryOfExport())
+                .set("notification.exportRegion", exportRegion);
+            if (exportRegion == ExportRegion.EU) {
+                update.unset("notification.ched");
+            } else {
+                update.set("notification.ched.reference", fields.ched().reference());
+            }
         }
         update.currentDate("updatedAt");
 

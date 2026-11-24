@@ -18,6 +18,7 @@ public record PatchNotificationRequest(
      * allowed while explicit nulls are rejected.
      */
     @AtLeastOneSection
+    @ValidExportDetails
     public static final class NotificationFields {
         @Valid
         @JsonSetter(nulls = Nulls.FAIL)
@@ -27,11 +28,27 @@ public record PatchNotificationRequest(
         @JsonSetter(nulls = Nulls.FAIL)
         private ArrivalFields arrival;
 
+        @JsonSetter(nulls = Nulls.FAIL)
+        @JsonDeserialize(using = StrictStringDeserializer.class)
+        @Pattern(regexp = "^[A-Z]{2}$", message = "Country of export must be a two-letter upper-case country code")
+        private String countryOfExport;
+
+        @Valid
+        @JsonSetter(nulls = Nulls.FAIL)
+        private ChedFields ched;
+
         private NotificationFields() {}
 
         public NotificationFields(SaveNotificationRequest.TransportFields transport, ArrivalFields arrival) {
+            this(transport, arrival, null, null);
+        }
+
+        public NotificationFields(SaveNotificationRequest.TransportFields transport, ArrivalFields arrival,
+            String countryOfExport, ChedFields ched) {
             this.transport = transport;
             this.arrival = arrival;
+            this.countryOfExport = countryOfExport;
+            this.ched = ched;
         }
 
         public SaveNotificationRequest.TransportFields transport() {
@@ -41,7 +58,22 @@ public record PatchNotificationRequest(
         public ArrivalFields arrival() {
             return arrival;
         }
+
+        public String countryOfExport() {
+            return countryOfExport;
+        }
+
+        public ChedFields ched() {
+            return ched;
+        }
     }
+
+    public record ChedFields(
+        @NotBlank(message = "CHED reference is required")
+        @Pattern(regexp = "^CHEDP\\.GB\\.\\d{4}\\.\\d{7}$",
+            message = "CHED reference must be in the format CHEDP.GB.YYYY.NNNNNNN")
+        @JsonDeserialize(using = StrictStringDeserializer.class) String reference
+    ) {}
 
     @ExpectedArrival
     public record ArrivalFields(

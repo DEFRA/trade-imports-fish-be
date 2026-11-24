@@ -122,6 +122,72 @@ class NotificationIT {
     }
 
     @Test
+    void patchesRestOfWorldCountryAndChedReference() throws Exception {
+        String id = UUID.randomUUID().toString();
+        assertThat(create(id)).isEqualTo(201);
+
+        String patched = mockMvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"organisationId":"represented-importer","notification":{
+                      "countryOfExport":"NO","ched":{"reference":"CHEDP.GB.2026.1234567"},
+                      "arrival":{"portOfEntry":"FELIXSTOWE","expectedArrivalDate":"2027-06-15",
+                        "expectedArrivalTime":"14:30"}}}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.notification.transport.mode").value("VESSEL"))
+            .andExpect(jsonPath("$.notification.countryOfExport").value("NO"))
+            .andExpect(jsonPath("$.notification.exportRegion").value("REST_OF_WORLD"))
+            .andExpect(jsonPath("$.notification.ched.reference").value("CHEDP.GB.2026.1234567"))
+            .andExpect(jsonPath("$.notification.arrival.portOfEntry").value("FELIXSTOWE"))
+            .andReturn().getResponse().getContentAsString();
+        assertAggregate(patched);
+
+        String read = mockMvc.perform(get("/notifications/{id}", id)).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        assertThat(new ObjectMapper().readTree(read)).isEqualTo(new ObjectMapper().readTree(patched));
+
+        var stored = mongoTemplate.getCollection("notifications").find(new org.bson.Document("_id", id)).first();
+        var notification = stored.get("notification", org.bson.Document.class);
+        assertThat(notification).containsEntry("countryOfExport", "NO")
+            .containsEntry("exportRegion", "REST_OF_WORLD");
+        assertThat(notification.get("ched", org.bson.Document.class))
+            .containsEntry("reference", "CHEDP.GB.2026.1234567");
+    }
+
+    @Test
+    void changingToAnEuCountryRemovesTheStoredChedReference() throws Exception {
+        String id = UUID.randomUUID().toString();
+        assertThat(create(id)).isEqualTo(201);
+        mockMvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"organisationId":"represented-importer","notification":{
+                      "countryOfExport":"NO","ched":{"reference":"CHEDP.GB.2026.1234567"}}}
+                    """))
+            .andExpect(status().isOk());
+
+        String patched = mockMvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"organisationId":"represented-importer","notification":{"countryOfExport":"FR"}}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.notification.countryOfExport").value("FR"))
+            .andExpect(jsonPath("$.notification.exportRegion").value("EU"))
+            .andExpect(jsonPath("$.notification.ched").doesNotExist())
+            .andReturn().getResponse().getContentAsString();
+        assertAggregate(patched);
+
+        String read = mockMvc.perform(get("/notifications/{id}", id)).andExpect(status().isOk())
+            .andExpect(jsonPath("$.notification.ched").doesNotExist())
+            .andReturn().getResponse().getContentAsString();
+        assertThat(new ObjectMapper().readTree(read)).isEqualTo(new ObjectMapper().readTree(patched));
+
+        var stored = mongoTemplate.getCollection("notifications").find(new org.bson.Document("_id", id)).first();
+        var notification = stored.get("notification", org.bson.Document.class);
+        assertThat(notification).containsEntry("countryOfExport", "FR").containsEntry("exportRegion", "EU")
+            .doesNotContainKey("ched");
+    }
+
+    @Test
     void canonicalCreationRetainsOriginalRequestAndBsonMappingOnReload() throws Exception {
         String id = UUID.randomUUID().toString();
         String originalRequest = body("AIR_FREIGHT");
