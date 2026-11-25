@@ -20,9 +20,9 @@ public @interface ValidExportDetails {
 
     Class<? extends Payload>[] payload() default {};
 
-    class Validator implements ConstraintValidator<ValidExportDetails, PatchNotificationRequest.NotificationFields> {
+    class Validator implements ConstraintValidator<ValidExportDetails, NotificationFields> {
         @Override
-        public boolean isValid(PatchNotificationRequest.NotificationFields fields,
+        public boolean isValid(NotificationFields fields,
             ConstraintValidatorContext context) {
             if (fields == null || fields.countryOfExport() == null) {
                 return fields == null || fields.ched() == null;

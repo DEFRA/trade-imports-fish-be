@@ -31,6 +31,7 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
   private static final String MDC_TRACE_ID = "trace.id";
+  private static final String TRACE_ID_PROPERTY = "traceId";
 
   @ExceptionHandler({
       HttpMessageNotReadableException.class,
@@ -45,7 +46,7 @@ public class GlobalExceptionHandler {
     problemDetail.setType(URI.create("https://api.cdp.defra.cloud/problems/validation-error"));
     problemDetail.setTitle("Validation Error");
     if (traceId != null) {
-      problemDetail.setProperty("traceId", traceId);
+      problemDetail.setProperty(TRACE_ID_PROPERTY, traceId);
     }
     return problemDetail;
   }
@@ -68,7 +69,7 @@ public class GlobalExceptionHandler {
 
     // Add trace ID for log correlation
     if (traceId != null) {
-      problemDetail.setProperty("traceId", traceId);
+      problemDetail.setProperty(TRACE_ID_PROPERTY, traceId);
     }
 
     // Add field-level validation errors
@@ -98,7 +99,7 @@ public class GlobalExceptionHandler {
     problemDetail.setTitle("Resource Not Found");
 
     if (traceId != null) {
-      problemDetail.setProperty("traceId", traceId);
+      problemDetail.setProperty(TRACE_ID_PROPERTY, traceId);
     }
 
     return problemDetail;
@@ -121,7 +122,7 @@ public class GlobalExceptionHandler {
     problemDetail.setTitle("Resource Conflict");
 
     if (traceId != null) {
-      problemDetail.setProperty("traceId", traceId);
+      problemDetail.setProperty(TRACE_ID_PROPERTY, traceId);
     }
 
     return problemDetail;
@@ -152,7 +153,7 @@ public class GlobalExceptionHandler {
     problemDetail.setTitle("Internal Server Error");
 
     if (traceId != null) {
-      problemDetail.setProperty("traceId", traceId);
+      problemDetail.setProperty(TRACE_ID_PROPERTY, traceId);
     }
 
     return problemDetail;

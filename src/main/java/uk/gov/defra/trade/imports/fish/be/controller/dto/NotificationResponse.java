@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import uk.gov.defra.trade.imports.fish.be.domain.NotificationAggregate;
 import uk.gov.defra.trade.imports.fish.be.domain.Notification;
-import uk.gov.defra.trade.imports.fish.be.domain.NotificationContent;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationStatus;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -16,7 +16,7 @@ public record NotificationResponse(
     NotificationStatus status,
     Instant createdAt,
     Instant updatedAt,
-    NotificationContent notification,
+    Notification notification,
     String importerOrganisationId,
     Map<String, Object> createdBy,
     Integer concurrencyToken,
@@ -24,10 +24,10 @@ public record NotificationResponse(
     Instant receivedAt,
     List<Map<String, Object>> fieldProvenance
 ) {
-    public static NotificationResponse from(Notification record) {
-        return new NotificationResponse(record.getId(), record.getReference(), record.getOrganisationId(),
-            record.getStatus(), record.getCreatedAt(), record.getUpdatedAt(), record.getNotification(),
-            record.getImporterOrganisationId(), record.getCreatedBy(), record.getConcurrencyToken(),
-            record.getSubmittedAt(), record.getReceivedAt(), record.getFieldProvenance());
+    public static NotificationResponse from(NotificationAggregate notificationRecord) {
+        return new NotificationResponse(notificationRecord.getId(), notificationRecord.getReference(), notificationRecord.getOrganisationId(),
+            notificationRecord.getStatus(), notificationRecord.getCreatedAt(), notificationRecord.getUpdatedAt(), notificationRecord.getNotification(),
+            notificationRecord.getImporterOrganisationId(), notificationRecord.getCreatedBy(), notificationRecord.getConcurrencyToken(),
+            notificationRecord.getSubmittedAt(), notificationRecord.getReceivedAt(), notificationRecord.getFieldProvenance());
     }
 }

@@ -30,7 +30,7 @@ public @interface ExpectedArrival {
 
     Class<? extends Payload>[] payload() default {};
 
-    class Validator implements ConstraintValidator<ExpectedArrival, PatchNotificationRequest.ArrivalFields> {
+    class Validator implements ConstraintValidator<ExpectedArrival, ArrivalFields> {
         private final Clock clock;
 
         public Validator() {
@@ -43,7 +43,7 @@ public @interface ExpectedArrival {
         }
 
         @Override
-        public boolean isValid(PatchNotificationRequest.ArrivalFields arrival, ConstraintValidatorContext context) {
+        public boolean isValid(ArrivalFields arrival, ConstraintValidatorContext context) {
             LocalDateTime local;
             try {
                 local = LocalDate.parse(arrival.expectedArrivalDate())
