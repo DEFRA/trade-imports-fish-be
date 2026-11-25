@@ -36,6 +36,8 @@ public final class NotificationFields {
     @NotEmptyIfPresent(message = "Commodities list must not be empty")
     private List<CommodityFields> commodities;
 
+    // Used by Jackson via reflection during JSON deserialization
+    @SuppressWarnings("unused")
     private NotificationFields() {}
 
     public NotificationFields(SaveNotificationRequest.TransportFields transport, ArrivalFields arrival) {

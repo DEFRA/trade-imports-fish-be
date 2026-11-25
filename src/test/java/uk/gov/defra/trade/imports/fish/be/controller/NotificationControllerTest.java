@@ -20,10 +20,12 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -287,51 +289,10 @@ class NotificationControllerTest {
         verifyNoInteractions(service);
     }
 
-    @Test
-    void emptyCommoditiesListIsRejectedOnUpdate() throws Exception {
-        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
-                {"organisationId":"importer","notification":{"commodities":[]}}
-                """))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.title").value("Validation Error"));
-        verifyNoInteractions(service);
-    }
-
-    @Test
-    void emptyOrganisationIdIsRejectedOnUpdate() throws Exception {
-        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
-                {"organisationId":"","notification":{"transport":{"mode":"AIR_FREIGHT"}}}
-                """))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.title").value("Validation Error"));
-        verifyNoInteractions(service);
-    }
-
-    @Test
-    void whitespaceOnlyOrganisationIdIsRejectedOnUpdate() throws Exception {
-        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
-                {"organisationId":" ","notification":{"transport":{"mode":"AIR_FREIGHT"}}}
-                """))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.title").value("Validation Error"));
-        verifyNoInteractions(service);
-    }
-
-    @Test
-    void nullNotificationIsRejectedOnUpdate() throws Exception {
-        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
-                {"organisationId":"importer","notification":null}
-                """))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.title").value("Validation Error"));
-        verifyNoInteractions(service);
-    }
-
-    @Test
-    void emptyNotificationObjectIsRejectedOnUpdate() throws Exception {
-        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
-                {"organisationId":"importer","notification":{}}
-                """))
+    @ParameterizedTest
+    @MethodSource
+    void invalidUpdatePayloadsAreRejected(String payload) throws Exception {
+        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content(payload))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.title").value("Validation Error"));
         verifyNoInteractions(service);
@@ -410,5 +371,25 @@ class NotificationControllerTest {
 
     private String validBody() {
         return "{\"organisationId\":\"importer\",\"notification\":{\"transport\":{\"mode\":\"AIR_FREIGHT\"}}}";
+    }
+
+    static Stream<String> invalidUpdatePayloadsAreRejected() {
+        return Stream.of(
+            """
+            {"organisationId":"importer","notification":{"commodities":[]}}
+            """,
+            """
+            {"organisationId":"","notification":{"transport":{"mode":"AIR_FREIGHT"}}}
+            """,
+            """
+            {"organisationId":" ","notification":{"transport":{"mode":"AIR_FREIGHT"}}}
+            """,
+            """
+            {"organisationId":"importer","notification":null}
+            """,
+            """
+            {"organisationId":"importer","notification":{}}
+            """
+        );
     }
 }
