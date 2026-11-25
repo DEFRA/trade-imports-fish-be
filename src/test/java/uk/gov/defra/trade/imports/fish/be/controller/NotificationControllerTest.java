@@ -2,7 +2,10 @@ package uk.gov.defra.trade.imports.fish.be.controller;
 
 import static uk.gov.defra.trade.imports.fish.be.NotificationSchemaAssertions.assertAggregate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -25,8 +28,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
@@ -36,6 +41,9 @@ import org.springframework.http.converter.json.ProblemDetailJacksonMixin;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.defra.trade.imports.fish.be.configuration.StrictUuidBindingAdvice;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.CommodityFields;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.PatchNotificationRequest;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.SpeciesFields;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationAggregate;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationStatus;
 import uk.gov.defra.trade.imports.fish.be.domain.Notification;
@@ -299,6 +307,55 @@ class NotificationControllerTest {
     }
 
     @Test
+    void acceptsCommoditiesAsTheOnlySectionOfAPatch() throws Exception {
+        when(service.update(eq(id), any())).thenReturn(notification());
+
+        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
+                {"organisationId":"importer","notification":{"commodities":[{
+                  "commodityCode":"03024400","description":"Mackerel",
+                  "species":[{"speciesCode":"MAC","commonName":"Atlantic mackerel",
+                    "scientificName":"Scomber scombrus","netWeightKg":12.5}],
+                  "totalNetWeightKg":12.5
+                }]}}
+                """))
+            .andExpect(status().isOk());
+
+        var request = ArgumentCaptor.forClass(PatchNotificationRequest.class);
+        verify(service).update(eq(id), request.capture());
+        assertThat(request.getValue().notification().commodities()).containsExactly(
+            new CommodityFields("03024400", "Mackerel",
+                java.util.List.of(new SpeciesFields("MAC", "Atlantic mackerel", "Scomber scombrus", 12.5, null)),
+                12.5, null));
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void invalidCommodityPatchesReportTheNestedField(String commodities, String path, String message)
+        throws Exception {
+        mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content("""
+                {"organisationId":"importer","notification":{"commodities":%s}}
+                """.formatted(commodities)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors['%s']".formatted(path)).value(message));
+        verifyNoInteractions(service);
+    }
+
+    static Stream<Arguments> invalidCommodityPatchesReportTheNestedField() {
+        return Stream.of(
+            Arguments.of("[]", "notification.commodities", "Commodities list must not be empty"),
+            Arguments.of("""
+                [{"commodityCode":"03024400","description":"Mackerel","species":[],"totalNetWeightKg":12.5}]
+                """, "notification.commodities[0].species", "At least one species is required"),
+            Arguments.of("""
+                [{"commodityCode":"03024400","description":"Mackerel",
+                  "species":[{"speciesCode":"MAC","commonName":"Atlantic mackerel",
+                    "scientificName":"Scomber scombrus","netWeightKg":0}],
+                  "totalNetWeightKg":12.5}]
+                """, "notification.commodities[0].species[0].netWeightKg", "Net weight must be greater than 0")
+        );
+    }
+
+    @Test
     void oldPutRouteIsNotRetained() throws Exception {
         mvc.perform(put("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON).content(validBody()))
             .andExpect(status().isMethodNotAllowed());
@@ -375,9 +432,6 @@ class NotificationControllerTest {
 
     static Stream<String> invalidUpdatePayloadsAreRejected() {
         return Stream.of(
-            """
-            {"organisationId":"importer","notification":{"commodities":[]}}
-            """,
             """
             {"organisationId":"","notification":{"transport":{"mode":"AIR_FREIGHT"}}}
             """,

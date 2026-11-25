@@ -11,8 +11,10 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.bson.Document;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,14 +27,19 @@ import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.ArrivalFields;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.ChedFields;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.CommodityFields;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.NotificationFields;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.PatchNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.SaveNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.SpeciesFields;
+import uk.gov.defra.trade.imports.fish.be.domain.Commodity;
+import uk.gov.defra.trade.imports.fish.be.domain.ExportRegion;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationAggregate;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationStatus;
 import uk.gov.defra.trade.imports.fish.be.domain.Notification;
+import uk.gov.defra.trade.imports.fish.be.domain.Species;
 import uk.gov.defra.trade.imports.fish.be.domain.TransportMode;
 import uk.gov.defra.trade.imports.fish.be.domain.repository.NotificationRepository;
 import uk.gov.defra.trade.imports.fish.be.exceptions.ConflictException;
@@ -221,6 +228,36 @@ class NotificationServiceTest {
             .containsOnlyKeys("notification.commodities");
         assertThat(update.getValue().getUpdateObject().get("$currentDate", org.bson.Document.class))
             .containsOnlyKeys("updatedAt").containsEntry("updatedAt", true);
+    }
+
+    @Test
+    void updateSavesArrivalExportDetailsAndCommoditiesTogetherWithoutChangingTransport() {
+        var commodity = new CommodityFields("03024400", "Mackerel",
+            List.of(new SpeciesFields("MAC", "Atlantic mackerel", "Scomber scombrus", 12.5, null)),
+            12.5, null);
+        var request = new PatchNotificationRequest("importer", new NotificationFields(
+            null, new ArrivalFields("FELIXSTOWE", "2027-07-14", "06:00"),
+            "IS", new ChedFields("CHEDP.GB.2027.1234567"), List.of(commodity)));
+        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+            org.mockito.ArgumentMatchers.eq(NotificationAggregate.class))).thenReturn(notification());
+
+        service.update(id, request);
+
+        var update = ArgumentCaptor.forClass(Update.class);
+        verify(mongoTemplate).findAndModify(any(Query.class), update.capture(), any(FindAndModifyOptions.class),
+            org.mockito.ArgumentMatchers.eq(NotificationAggregate.class));
+        assertThat(update.getValue().getUpdateObject()).containsOnlyKeys("$set", "$currentDate");
+        assertThat(update.getValue().getUpdateObject().get("$set", Document.class))
+            .containsExactlyInAnyOrderEntriesOf(new Document()
+                .append("notification.arrival.portOfEntry", "FELIXSTOWE")
+                .append("notification.arrival.expectedArrivalDate", "2027-07-14")
+                .append("notification.arrival.expectedArrivalTime", "06:00")
+                .append("notification.arrival.expectedArrivalAt", Instant.parse("2027-07-14T05:00:00Z"))
+                .append("notification.countryOfExport", "IS")
+                .append("notification.exportRegion", ExportRegion.REST_OF_WORLD)
+                .append("notification.ched.reference", "CHEDP.GB.2027.1234567")
+                .append("notification.commodities", List.of(new Commodity("03024400", "Mackerel",
+                    List.of(new Species("MAC", "Atlantic mackerel", "Scomber scombrus", 12.5, null)), 12.5, null))));
     }
 
     private NotificationAggregate notification() {
