@@ -21,6 +21,17 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 
 class GlobalExceptionHandlerTest {
 
+    @Test
+    void invalidRequestDoesNotExposeParserDetailsAndRetainsTraceId() {
+        MDC.put("trace.id", "invalid-request-trace");
+        ProblemDetail problem = exceptionHandler.handleInvalidRequest(
+            new IllegalArgumentException("Internal parser details"));
+        assertThat(problem.getStatus()).isEqualTo(400);
+        assertThat(problem.getTitle()).isEqualTo("Validation Error");
+        assertThat(problem.getDetail()).doesNotContain("Internal parser details");
+        assertThat(problem.getProperties()).containsEntry("traceId", "invalid-request-trace");
+    }
+
     private GlobalExceptionHandler exceptionHandler;
 
     @BeforeEach
