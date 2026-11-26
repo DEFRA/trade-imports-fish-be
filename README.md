@@ -1,12 +1,17 @@
 CDP Java Spring Boot backend template.
 
-* [Install MongoDB](#install-mongodb)
-* [Inspect MongoDB](#inspect-mongodb)
-* [Testing](#testing)
-* [Running](#running)
-* [Dependabot](#dependabot)
-* [Setup](#setup)
-* [Signed Commits](#signed-commits)
+- [Docker Compose](#docker-compose)
+- [MongoDB](#mongodb)
+- [Inspect MongoDB](#inspect-mongodb)
+- [Testing](#testing)
+- [Running](#running)
+- [Publishing](#publishing-feature-branches)
+- [SonarCloud](#sonarcloud)
+- [Dependabot](#dependabot)
+- [Documentation](#documentation)
+- [Setup](#setup)
+- [Git Pre-commit Hook](#git-pre-commit-hook)
+- [Signed Commits](#signed-commits)
 
 ### Docker Compose
 
@@ -31,10 +36,10 @@ in [github.com/DEFRA/cdp-local-environment](https://github.com/DEFRA/cdp-local-e
 
 #### MongoDB via Docker
 
-Run infrastructure services (MongoDB, Floci, Redis):
+Run infrastructure services (MongoDB and Floci):
 
 ```bash
-docker compose --profile infra up -d
+docker compose up -d mongodb floci
 ```
 
 #### MongoDB locally
@@ -72,7 +77,7 @@ Run the tests with:
 mvn test
 ```
 
-There are also application level ests run by running a full Spring Boot application backed
+There are also application level tests run by running a full Spring Boot application backed
 by [Testcontainers](https://testcontainers.com/).
 These tests do not use mocking of any sort and read and write from the containerized database.
 
@@ -121,9 +126,180 @@ licence.
 It is designed to encourage use and re-use of information freely and flexibly, with only a few
 conditions.
 
+### Documentation
+
+The service includes comprehensive technical documentation built with MkDocs.
+
+#### Prerequisites
+
+Before building the documentation, ensure you have the following installed:
+
+**Python 3.8+**:
+
+```bash
+python3 --version
+```
+
+If not installed, see [python.org](https://www.python.org/downloads/) for installation instructions.
+
+**MkDocs**:
+
+```bash
+mkdocs --version
+```
+
+If not installed, install via pip:
+
+```bash
+pip install mkdocs mkdocs-material
+```
+
+**Node.js & npm** (for Prettier):
+
+```bash
+node --version
+npm --version
+```
+
+If not installed, see [nodejs.org](https://nodejs.org/en/download/) for installation instructions.
+
+#### Building Documentation
+
+Build the documentation site:
+
+```bash
+mkdocs build
+```
+
+This generates a static HTML site in the `_site/` directory.
+
+#### Viewing Documentation Locally
+
+Serve the documentation locally with live reload:
+
+```bash
+mkdocs serve
+```
+
+Then open http://localhost:8000 in your browser. The site will automatically reload when documentation files change.
+
+#### Documentation Structure
+
+Documentation is organized in the `docs/` folder with one file per component:
+
+- `docs/index.md` — Navigation hub and overview
+- `docs/architecture.md` — Project structure, technology stack, local dev setup
+- `docs/api.md` — REST API endpoints and examples
+- `docs/services.md` — Business logic and service layer
+- `docs/configuration.md` — Configuration options and environment variables
+- `docs/error-handling.md` — Exception handling and error responses
+- `docs/filters.md` — Request tracing and middleware
+- `docs/monitoring.md` — Logging, metrics, and observability
+
+Documentation is automatically deployed to GitHub Pages via the [build-docs.yml](.github/workflows/build-docs.yml) workflow on every push to the main branch.
+
 ### Setup
 
-Before making your first commit, follow the [Signed Commits](#signed-commits) setup.
+Before making your first commit, follow the [Git Pre-commit Hook](#git-pre-commit-hook) and [Signed Commits](#signed-commits) setup.
+
+### Git Pre-commit Hook
+
+This repository includes a Git pre-commit hook that automatically updates documentation when you commit changes. The hook requires the Copilot CLI and GitHub authentication.
+
+#### Prerequisites
+
+1. **Copilot CLI** — check if it's already installed:
+
+   ```bash
+   copilot --version
+   ```
+
+   If not installed, install it:
+
+   ```bash
+   npm install -g @github/copilot
+   ```
+
+   Then verify installation:
+
+   ```bash
+   copilot --version
+   ```
+
+2. **Fine-grained Personal Access Token** — create one on GitHub:
+   - Go to [GitHub Settings > Personal access tokens > Fine-grained tokens](https://github.com/settings/personal-access-tokens/new)
+   - **Token name:** e.g., "Trade Imports Fish BE - Pre-commit Hook"
+   - **Expiration:** Choose a reasonable duration (e.g., 90 days)
+   - **Repository access:** Select "Public repositories"
+   - **Permissions:**
+     - Set **Copilot Chat** to `Read-only`
+     - Set **Copilot request** to `Read-only`
+   - Click **Generate token** and copy it immediately (you won't see it again)
+
+#### Setup Steps
+
+1. **Install the repository's local development dependencies** (requires Node.js and npm):
+
+   ```bash
+   npm ci
+   ```
+
+   This installs the pinned Prettier version used by the hook.
+
+2. **Make the pre-commit hook executable:**
+
+   ```bash
+   chmod +x .githooks/pre-commit
+   ```
+
+3. **Configure Git to use the .githooks directory:**
+
+   ```bash
+   git config core.hooksPath .githooks
+   ```
+
+4. **Set the GitHub authentication token** — choose one of these environment variables:
+
+   ```bash
+   export COPILOT_GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
+   # OR
+   export GH_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
+   # OR
+   export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
+   ```
+
+   To persist it across terminal sessions, add the export to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
+
+   ```bash
+   echo 'export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"' >> ~/.zshrc
+   source ~/.zshrc
+   ```
+
+5. **Verify setup** — make a small change to a non-documentation file and run:
+
+   ```bash
+   git add your-changes
+   git commit -m "test: verify pre-commit hook"
+   ```
+
+   The hook should run and automatically update `docs/` if needed.
+
+#### Bypassing Pre-commit Hooks
+
+If you need to skip the pre-commit hook for a specific commit (e.g., during troubleshooting or when the hook fails), use the `--no-verify` flag:
+
+```bash
+git commit --no-verify -m "your commit message"
+```
+
+> **⚠️ Use with caution:** Skipping the hook may result in stale documentation. Only use `--no-verify` when necessary, and ensure documentation is updated separately if needed.
+
+**When to use `--no-verify`:**
+
+- The hook is misconfigured or temporarily broken
+- You're troubleshooting issues and need to commit changes quickly
+- The documentation doesn't require updates for this specific commit
+- You'll update documentation separately before merging to main
 
 ### Signed Commits
 

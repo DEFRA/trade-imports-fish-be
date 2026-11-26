@@ -166,10 +166,14 @@ coverage.xml
 *.old
 *.orig
 
-#misc
+# misc
 .editorconfig
 .envrc
 .tool-versions
+node_modules/
 
 # AI reference files
 Claude.md
+
+# Docs
+_site/

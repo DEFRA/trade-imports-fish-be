@@ -1,0 +1,11 @@
+#!/bin/sh
+
+sh scripts/update-docs.sh || exit $?
+
+# Build the documentation site in a temporary directory to ensure it compiles correctly
+# This is not possible in update-docs because it doesn't have bash access to run mkdocs build
+DOCS_BUILD_DIR=$(mktemp -d) || exit $?
+trap 'rm -rf "$DOCS_BUILD_DIR"' EXIT HUP INT TERM
+mkdocs build --strict --site-dir "$DOCS_BUILD_DIR" || exit $?
+
+mvn test
