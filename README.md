@@ -64,6 +64,13 @@ mongosh
 
 You can use the CDP Terminal to access the environments' MongoDB.
 
+### Notification API
+
+The [transport draft alignment contract](docs/notification-api.md) documents the implemented
+POST/GET/PATCH API, examples, acceptance criteria and test-first validation. The breaking
+contract requires a separate compatible frontend change. See also the [domain glossary](GLOSSARY.md) and
+[architectural decisions](docs/adr/).
+
 ### Testing
 
 Run the tests with:

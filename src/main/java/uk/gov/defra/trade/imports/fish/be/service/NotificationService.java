@@ -15,7 +15,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+import uk.gov.defra.trade.imports.fish.be.controller.dto.PatchNotificationRequest;
 import uk.gov.defra.trade.imports.fish.be.controller.dto.SaveNotificationRequest;
+import uk.gov.defra.trade.imports.fish.be.domain.Arrival;
 import uk.gov.defra.trade.imports.fish.be.domain.Notification;
 import uk.gov.defra.trade.imports.fish.be.domain.NotificationStatus;
 import uk.gov.defra.trade.imports.fish.be.domain.repository.NotificationRepository;
@@ -47,7 +49,7 @@ public class NotificationService {
         for (int attempt = 0; attempt < MAX_REFERENCE_ATTEMPTS; attempt++) {
             Notification notification = new Notification(id, referenceNumberGenerator.generate(),
                 NotificationStatus.DRAFT, request.organisationId(), createdAt, createdAt,
-                request.transportMethod());
+                request.notification().transport().mode());
             try {
                 Notification saved = repository.insert(notification);
                 meterRegistry.counter("notification_created").increment();
@@ -72,19 +74,32 @@ public class NotificationService {
             .orElseThrow(() -> new NotFoundException("Notification not found with id: " + id));
     }
 
-    public Notification update(UUID id, SaveNotificationRequest request) {
+    public Notification update(UUID id, PatchNotificationRequest request) {
         Query query = Query.query(Criteria.where("_id").is(id.toString())
             .and("organisationId").is(request.organisationId())
             .and("status").is(NotificationStatus.DRAFT))
             .withReadPreference(ReadPreference.primary());
-        Update update = new Update()
-            .set("transportMethod", request.transportMethod())
-            .currentDate("updatedAt");
+        var fields = request.notification();
+        Update update = new Update();
+        if (fields.transport() != null) {
+            update.set("notification.transport.mode", fields.transport().mode());
+        }
+        if (fields.arrival() != null) {
+            Arrival arrival = Arrival.entered(fields.arrival().portOfEntry(),
+                fields.arrival().expectedArrivalDate(), fields.arrival().expectedArrivalTime());
+            update.set("notification.arrival.portOfEntry", arrival.portOfEntry())
+                .set("notification.arrival.expectedArrivalDate", arrival.expectedArrivalDate())
+                .set("notification.arrival.expectedArrivalTime", arrival.expectedArrivalTime())
+                .set("notification.arrival.expectedArrivalAt", arrival.expectedArrivalAt());
+        }
+        update.currentDate("updatedAt");
 
         Notification updated = mongoTemplate.findAndModify(query, update,
             FindAndModifyOptions.options().returnNew(true), Notification.class);
         if (updated == null) {
-            findById(id);
+            if (!repository.existsById(id.toString())) {
+                throw new NotFoundException("Notification not found with id: " + id);
+            }
             throw new ConflictException("Only a draft belonging to the same organisation can be updated");
         }
         meterRegistry.counter("notification_updated").increment();
@@ -93,15 +108,20 @@ public class NotificationService {
     }
 
     private CreationResult replay(Notification notification, SaveNotificationRequest request) {
+        var originalRequest = notification.getCreationRequest();
+        if (originalRequest == null) {
+            throw new IllegalStateException("Notification is missing its original creation request");
+        }
         if (notification.getStatus() != NotificationStatus.DRAFT
             || !notification.getOrganisationId().equals(request.organisationId())
-            || notification.getCreationTransportMethod() != request.transportMethod()) {
+            || !originalRequest.organisationId().equals(request.organisationId())
+            || originalRequest.notification().transport().mode() != request.notification().transport().mode()) {
             throw new ConflictException("Idempotency key has already been used with a different request");
         }
         log.info("Replayed draft creation with id: {}", notification.getId());
         Notification original = new Notification(notification.getId(), notification.getReference(),
             notification.getStatus(), notification.getOrganisationId(), notification.getCreatedAt(),
-            notification.getCreatedAt(), notification.getCreationTransportMethod());
+            notification.getCreatedAt(), originalRequest.notification().transport().mode());
         return new CreationResult(original, false);
     }
 }
