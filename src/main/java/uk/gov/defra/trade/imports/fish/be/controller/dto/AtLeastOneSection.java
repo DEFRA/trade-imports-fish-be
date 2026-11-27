@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = AtLeastOneSection.Validator.class)
 public @interface AtLeastOneSection {
-    String message() default "Transport or arrival is required";
+    String message() default "At least one notification section is required";
 
     Class<?>[] groups() default {};
 
@@ -23,7 +23,8 @@ public @interface AtLeastOneSection {
     class Validator implements ConstraintValidator<AtLeastOneSection, PatchNotificationRequest.NotificationFields> {
         @Override
         public boolean isValid(PatchNotificationRequest.NotificationFields fields, ConstraintValidatorContext context) {
-            return fields == null || fields.transport() != null || fields.arrival() != null;
+            return fields == null || fields.transport() != null || fields.arrival() != null
+                || fields.countryOfExport() != null || fields.ched() != null;
         }
     }
 }

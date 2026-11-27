@@ -102,13 +102,13 @@
         "countryOfExport": {
           "type": "string",
           "pattern": "^[A-Z]{2}$",
-          "description": "Country the consignment is exported from, as an ISO 3166-1 alpha-2 code.",
+          "description": "Country the consignment is exported from, in the two-letter upper-case format used by ISO 3166-1 alpha-2. The prototype checks the format but does not check membership against country reference data.",
           "examples": ["IS"]
         },
         "exportRegion": {
           "type": "string",
           "enum": ["EU", "REST_OF_WORLD"],
-          "description": "Whether the country of export is in the European Union. EU: a member state of the EU-27. REST_OF_WORLD: any other country. It is calculated from countryOfExport and determines whether a CHED reference is needed."
+          "description": "Whether the country of export is in the EU-27. EU: a member state of the EU-27. REST_OF_WORLD: any other country. It is calculated from countryOfExport and determines whether a CHED reference is needed. The SPS agreement exemption is deferred until country reference data is provided by MDM."
         },
         "ched": { "$ref": "#/$defs/Ched" },
         "commodities": {
