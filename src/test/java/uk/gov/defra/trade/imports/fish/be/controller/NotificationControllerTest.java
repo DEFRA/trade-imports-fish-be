@@ -225,7 +225,10 @@ class NotificationControllerTest {
         "{\"ched\":{\"reference\":\"CHEDP.GB.2026.1234567\"}}",
         "{\"countryOfExport\":\"NO\"}",
         "{\"countryOfExport\":\"FR\",\"ched\":{\"reference\":\"CHEDP.GB.2026.1234567\"}}",
-        "{\"countryOfExport\":\"NO\",\"ched\":{\"reference\":\"CHEDP.GB.2026.1234567\"},\"exportRegion\":\"REST_OF_WORLD\"}"
+        "{\"countryOfExport\":\"NO\",\"ched\":{\"reference\":\"CHEDP.GB.2026.1234567\"},\"exportRegion\":\"REST_OF_WORLD\"}",
+        "{\"countryOfExport\":\"NO\",\"ched\":{}}",
+        "{\"countryOfExport\":\"NO\",\"ched\":{\"reference\":null}}",
+        "{\"countryOfExport\":\"NO\",\"ched\":{\"reference\":\"   \"}}"
     })
     void invalidCountryAndChedPatchesAreRejectedWithoutPersistence(String notification) throws Exception {
         mvc.perform(patch("/notifications/{id}", id).contentType(MediaType.APPLICATION_JSON)
