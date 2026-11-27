@@ -26,7 +26,8 @@ public class Notification {
     private String organisationId;
     private Instant createdAt;
     private Instant updatedAt;
-    private NotificationContent notification;
+    // Name mirrors the API JSON and the MongoDB "notification.*" paths.
+    private NotificationContent notification; // NOSONAR java:S1700
     private String importerOrganisationId;
     private Map<String, Object> createdBy;
     private Integer concurrencyToken;
