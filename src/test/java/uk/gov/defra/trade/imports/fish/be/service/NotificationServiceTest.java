@@ -165,6 +165,42 @@ class NotificationServiceTest {
     }
 
     @Test
+    void updateSetsOnlyArrivalWithUkLocalTimeConvertedToInstant() {
+        var arrivalRequest = new PatchNotificationRequest("importer",
+            new PatchNotificationRequest.NotificationFields(null,
+                new PatchNotificationRequest.ArrivalFields("FELIXSTOWE", "2027-06-15", "09:05")));
+        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+            org.mockito.ArgumentMatchers.eq(Notification.class))).thenReturn(notification());
+
+        service.update(id, arrivalRequest);
+
+        var update = ArgumentCaptor.forClass(Update.class);
+        verify(mongoTemplate).findAndModify(any(Query.class), update.capture(), any(FindAndModifyOptions.class),
+            org.mockito.ArgumentMatchers.eq(Notification.class));
+        assertThat(update.getValue().getUpdateObject().get("$set", org.bson.Document.class))
+            .containsOnlyKeys("notification.arrival.portOfEntry", "notification.arrival.expectedArrivalDate",
+                "notification.arrival.expectedArrivalTime", "notification.arrival.expectedArrivalAt")
+            .containsEntry("notification.arrival.portOfEntry", "FELIXSTOWE")
+            .containsEntry("notification.arrival.expectedArrivalDate", "2027-06-15")
+            .containsEntry("notification.arrival.expectedArrivalTime", "09:05")
+            .containsEntry("notification.arrival.expectedArrivalAt", Instant.parse("2027-06-15T08:05:00Z"));
+    }
+
+    @Test
+    void replayFailsWhenTheStoredDraftHasNoOriginalCreationRequest() {
+        Notification legacy = new Notification();
+        legacy.setId(id.toString());
+        legacy.setStatus(NotificationStatus.DRAFT);
+        legacy.setOrganisationId("importer");
+        when(repository.findById(id.toString())).thenReturn(Optional.of(legacy));
+
+        assertThatThrownBy(() -> service.create(id, request))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Notification is missing its original creation request");
+        verify(repository, never()).insert(any(Notification.class));
+    }
+
+    @Test
     void creationTruncatesTimestampToMongoDbMillisecondPrecision() {
         Instant preciseTime = Instant.parse("2026-11-16T16:00:00.123456789Z");
         service = new NotificationService(repository, generator, mongoTemplate, meterRegistry,

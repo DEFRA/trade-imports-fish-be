@@ -24,10 +24,11 @@ public record NotificationResponse(
     Instant receivedAt,
     List<Map<String, Object>> fieldProvenance
 ) {
-    public static NotificationResponse from(Notification record) {
-        return new NotificationResponse(record.getId(), record.getReference(), record.getOrganisationId(),
-            record.getStatus(), record.getCreatedAt(), record.getUpdatedAt(), record.getNotification(),
-            record.getImporterOrganisationId(), record.getCreatedBy(), record.getConcurrencyToken(),
-            record.getSubmittedAt(), record.getReceivedAt(), record.getFieldProvenance());
+    public static NotificationResponse from(Notification notification) {
+        return new NotificationResponse(notification.getId(), notification.getReference(),
+            notification.getOrganisationId(), notification.getStatus(), notification.getCreatedAt(),
+            notification.getUpdatedAt(), notification.getNotification(), notification.getImporterOrganisationId(),
+            notification.getCreatedBy(), notification.getConcurrencyToken(), notification.getSubmittedAt(),
+            notification.getReceivedAt(), notification.getFieldProvenance());
     }
 }
